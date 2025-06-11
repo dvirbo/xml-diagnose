@@ -3,7 +3,6 @@ import xml.etree.ElementTree as ET
 import csv
 
 INPUT_DIR = "C:\\Users\\dvirbo\\mizrahi\\documents_20250527"
-OUTPUT_CSV = "error_reports.csv"
 
 def parse_xml_files(directory):
     """Parse all XML files in the directory and group by response type."""
@@ -93,7 +92,8 @@ def main():
     first_responses, final_responses = parse_xml_files(INPUT_DIR)
     error_reports, valid_reports = build_report_data(first_responses, final_responses)
 
-    save_csv(error_reports, OUTPUT_CSV)
+    save_csv(error_reports, "error_reports.csv")
+    save_csv(valid_reports, "valid_reports.csv")
     
     print(f"Total valid reports: {len(valid_reports)}")
     print(f"Total error reports: {len(error_reports)}")
