@@ -1,0 +1,1025 @@
+<wsdl:definitions xmlns:apachesoap="http://xml.apache.org/xml-soap" xmlns:impl="http://localhost:8080/ActOne/services/alertsService" xmlns:intf="http://localhost:8080/ActOne/services/alertsService" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns1="urn:alertsService" xmlns:tns2="http://beans.webService.actimize.com" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:wsdlsoap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://localhost:8080/ActOne/services/alertsService">
+<!-- WSDL created by Apache Axis version: 1.4
+Built on Apr 22, 2006 (06:55:48 PDT) -->
+<wsdl:types>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://localhost:8080/ActOne/services/alertsService">
+<import namespace="urn:alertsService"/>
+<import namespace="http://beans.webService.actimize.com"/>
+<import namespace="http://schemas.xmlsoap.org/soap/encoding/"/>
+<complexType name="ArrayOf_xsd_string">
+<complexContent>
+<restriction base="soapenc:Array">
+<attribute ref="soapenc:arrayType" wsdl:arrayType="xsd:string[]"/>
+</restriction>
+</complexContent>
+</complexType>
+<complexType name="ArrayOf_tns1_LogMessage">
+<complexContent>
+<restriction base="soapenc:Array">
+<attribute ref="soapenc:arrayType" wsdl:arrayType="tns1:LogMessage[]"/>
+</restriction>
+</complexContent>
+</complexType>
+<complexType name="ArrayOf_tns1_AlertData">
+<complexContent>
+<restriction base="soapenc:Array">
+<attribute ref="soapenc:arrayType" wsdl:arrayType="tns1:AlertData[]"/>
+</restriction>
+</complexContent>
+</complexType>
+<complexType name="ArrayOf_tns1_AlertAttribute">
+<complexContent>
+<restriction base="soapenc:Array">
+<attribute ref="soapenc:arrayType" wsdl:arrayType="tns1:AlertAttribute[]"/>
+</restriction>
+</complexContent>
+</complexType>
+<complexType name="ArrayOf_tns1_Alert">
+<complexContent>
+<restriction base="soapenc:Array">
+<attribute ref="soapenc:arrayType" wsdl:arrayType="tns1:Alert[]"/>
+</restriction>
+</complexContent>
+</complexType>
+<complexType name="ArrayOf_tns1_AlertResult">
+<complexContent>
+<restriction base="soapenc:Array">
+<attribute ref="soapenc:arrayType" wsdl:arrayType="tns1:AlertResult[]"/>
+</restriction>
+</complexContent>
+</complexType>
+<complexType name="ArrayOf_tns1_RelationDataForConsolidation">
+<complexContent>
+<restriction base="soapenc:Array">
+<attribute ref="soapenc:arrayType" wsdl:arrayType="tns1:RelationDataForConsolidation[]"/>
+</restriction>
+</complexContent>
+</complexType>
+<complexType name="ArrayOf_tns1_Result">
+<complexContent>
+<restriction base="soapenc:Array">
+<attribute ref="soapenc:arrayType" wsdl:arrayType="tns1:Result[]"/>
+</restriction>
+</complexContent>
+</complexType>
+<complexType name="ArrayOf_tns1_RelationData">
+<complexContent>
+<restriction base="soapenc:Array">
+<attribute ref="soapenc:arrayType" wsdl:arrayType="tns1:RelationData[]"/>
+</restriction>
+</complexContent>
+</complexType>
+<complexType name="ArrayOf_tns1_Reason">
+<complexContent>
+<restriction base="soapenc:Array">
+<attribute ref="soapenc:arrayType" wsdl:arrayType="tns1:Reason[]"/>
+</restriction>
+</complexContent>
+</complexType>
+</schema>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="urn:alertsService">
+<import namespace="http://beans.webService.actimize.com"/>
+<import namespace="http://localhost:8080/ActOne/services/alertsService"/>
+<import namespace="http://schemas.xmlsoap.org/soap/encoding/"/>
+<complexType name="LogMessage">
+<sequence>
+<element name="eventMessage" nillable="true" type="xsd:string"/>
+<element name="eventType" type="xsd:int"/>
+</sequence>
+</complexType>
+<complexType name="ACMResult">
+<sequence>
+<element name="messageList" nillable="true" type="impl:ArrayOf_tns1_LogMessage"/>
+<element name="status" type="xsd:boolean"/>
+</sequence>
+</complexType>
+<complexType name="AlertData">
+<sequence>
+<element name="fieldValues" nillable="true" type="impl:ArrayOf_xsd_string"/>
+<element name="url" nillable="true" type="xsd:string"/>
+</sequence>
+</complexType>
+<complexType name="AlertDataList">
+<sequence>
+<element name="alerts" nillable="true" type="impl:ArrayOf_tns1_AlertData"/>
+<element name="fieldDescriptions" nillable="true" type="impl:ArrayOf_xsd_string"/>
+</sequence>
+</complexType>
+<complexType name="AlertAttribute">
+<sequence>
+<element name="identifier" nillable="true" type="xsd:string"/>
+<element name="value" nillable="true" type="xsd:string"/>
+</sequence>
+</complexType>
+<complexType name="Alert">
+<sequence>
+<element name="alertAISCallXML" nillable="true" type="xsd:string"/>
+<element name="alertDate" nillable="true" type="xsd:string"/>
+<element name="alertIdentifier" nillable="true" type="xsd:string"/>
+<element name="alertTypeIdentifier" nillable="true" type="xsd:string"/>
+<element name="alertTypeVersion" nillable="true" type="xsd:string"/>
+<element name="attributes" nillable="true" type="impl:ArrayOf_tns1_AlertAttribute"/>
+<element name="buIdentifier" nillable="true" type="xsd:string"/>
+<element name="details" nillable="true" type="xsd:string"/>
+<element name="ownerIdentifier" nillable="true" type="xsd:string"/>
+<element name="score" nillable="true" type="xsd:string"/>
+<element name="statusIdentifier" nillable="true" type="xsd:string"/>
+<element name="useZippedXml" type="xsd:boolean"/>
+<element name="xml" nillable="true" type="xsd:string"/>
+<element name="zippedXml" nillable="true" type="xsd:base64Binary"/>
+</sequence>
+</complexType>
+<complexType name="AlertResult">
+<sequence>
+<element name="alertIdentifier" nillable="true" type="xsd:string"/>
+<element name="message" nillable="true" type="xsd:string"/>
+<element name="status" type="xsd:boolean"/>
+</sequence>
+</complexType>
+<complexType name="RelationDataForConsolidation">
+<sequence>
+<element name="additionalInfo" nillable="true" type="xsd:string"/>
+<element name="child" nillable="true" type="tns1:Alert"/>
+<element name="relationTypeIdentifier" nillable="true" type="impl:ArrayOf_xsd_string"/>
+</sequence>
+</complexType>
+<complexType name="Result">
+<sequence>
+<element name="entryIdentifier" nillable="true" type="xsd:string"/>
+<element name="message" nillable="true" type="xsd:string"/>
+</sequence>
+</complexType>
+<complexType name="MaskedAlertList">
+<sequence>
+<element name="alerts" nillable="true" type="impl:ArrayOf_tns1_Alert"/>
+<element name="maskedFields" nillable="true" type="impl:ArrayOf_xsd_string"/>
+</sequence>
+</complexType>
+<complexType name="AttachmentData">
+<sequence>
+<element name="confidential" type="xsd:boolean"/>
+<element name="fileContent" nillable="true" type="xsd:base64Binary"/>
+<element name="fileDescription" nillable="true" type="xsd:string"/>
+<element name="fileName" nillable="true" type="xsd:string"/>
+<element name="fileNote" nillable="true" type="xsd:string"/>
+<element name="fileOriginalPath" nillable="true" type="xsd:string"/>
+</sequence>
+</complexType>
+<complexType name="ACMObjectInfo">
+<complexContent>
+<extension base="tns2:ACMObjectIdentification">
+<sequence>
+<element name="description" nillable="true" type="xsd:string"/>
+<element name="name" nillable="true" type="xsd:string"/>
+</sequence>
+</extension>
+</complexContent>
+</complexType>
+<complexType name="RelationData">
+<complexContent>
+<extension base="tns2:ACMObject">
+<sequence>
+<element name="additionalInfo" nillable="true" type="xsd:string"/>
+<element name="childIdentifier" nillable="true" type="xsd:string"/>
+<element name="creationDate" nillable="true" type="xsd:dateTime"/>
+<element name="relationDate" nillable="true" type="xsd:dateTime"/>
+<element name="relationTypeIdentifier" nillable="true" type="xsd:string"/>
+</sequence>
+</extension>
+</complexContent>
+</complexType>
+<complexType name="Reason">
+<sequence>
+<element name="code" nillable="true" type="xsd:string"/>
+<element name="name" nillable="true" type="xsd:string"/>
+</sequence>
+</complexType>
+<complexType name="RFIContent">
+<sequence>
+<element name="attachItemDataAsPDF" nillable="true" type="xsd:boolean"/>
+<element name="bcc" nillable="true" type="xsd:string"/>
+<element name="body" nillable="true" type="xsd:string"/>
+<element name="cc" nillable="true" type="xsd:string"/>
+<element name="rfiName" nillable="true" type="xsd:string"/>
+<element name="subject" nillable="true" type="xsd:string"/>
+<element name="to" nillable="true" type="xsd:string"/>
+</sequence>
+</complexType>
+<simpleType name="ExportFormatEnum">
+<restriction base="xsd:string">
+<enumeration value="txt"/>
+<enumeration value="pdf"/>
+</restriction>
+</simpleType>
+</schema>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://beans.webService.actimize.com">
+<import namespace="urn:alertsService"/>
+<import namespace="http://localhost:8080/ActOne/services/alertsService"/>
+<import namespace="http://schemas.xmlsoap.org/soap/encoding/"/>
+<complexType name="ACMObjectIdentification">
+<sequence>
+<element name="id" nillable="true" type="xsd:long"/>
+<element name="identifier" nillable="true" type="xsd:string"/>
+<element name="type" nillable="true" type="xsd:string"/>
+</sequence>
+</complexType>
+<complexType abstract="true" name="ACMObject">
+<sequence>
+<element name="objectInfo" nillable="true" type="tns1:ACMObjectInfo"/>
+</sequence>
+</complexType>
+</schema>
+</wsdl:types>
+<wsdl:message name="purgeAlertsResponse">
+<wsdl:part name="purgeAlertsReturn" type="tns1:ACMResult"> </wsdl:part>
+<wsdl:part name="results" type="impl:ArrayOf_tns1_Result"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="removeRelationsResponse">
+<wsdl:part name="removeRelationsReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="removeFindingsReasonsResponse">
+<wsdl:part name="removeFindingsReasonsReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="writeAndArchiveAlertsToFileByQueryRequest3">
+<wsdl:part name="alertFilter" type="xsd:string"> </wsdl:part>
+<wsdl:part name="exportFormatEnum" type="tns1:ExportFormatEnum"> </wsdl:part>
+<wsdl:part name="prefix" type="xsd:string"> </wsdl:part>
+<wsdl:part name="suffix" type="xsd:string"> </wsdl:part>
+<wsdl:part name="extension" type="xsd:string"> </wsdl:part>
+<wsdl:part name="overwriteExisting" type="xsd:boolean"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="writeAndArchiveAlertsToFileByQueryRequest2">
+<wsdl:part name="drillDownQueryIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="drillDownQueryParameters" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+<wsdl:part name="exportFormatEnum" type="tns1:ExportFormatEnum"> </wsdl:part>
+<wsdl:part name="prefix" type="xsd:string"> </wsdl:part>
+<wsdl:part name="suffix" type="xsd:string"> </wsdl:part>
+<wsdl:part name="extension" type="xsd:string"> </wsdl:part>
+<wsdl:part name="overwriteExisting" type="xsd:boolean"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="writeAndArchiveAlertsToFileByQueryRequest1">
+<wsdl:part name="alertFilter" type="xsd:string"> </wsdl:part>
+<wsdl:part name="exportFormatEnum" type="tns1:ExportFormatEnum"> </wsdl:part>
+<wsdl:part name="prefix" type="xsd:string"> </wsdl:part>
+<wsdl:part name="suffix" type="xsd:string"> </wsdl:part>
+<wsdl:part name="extension" type="xsd:string"> </wsdl:part>
+<wsdl:part name="overwriteExisting" type="xsd:boolean"> </wsdl:part>
+<wsdl:part name="isAlertDir" type="xsd:boolean"> </wsdl:part>
+<wsdl:part name="isZip" type="xsd:boolean"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="migratingCaseToCaseItemResponse">
+<wsdl:part name="migratingCaseToCaseItemReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="getAlertByIdentifierRequest">
+<wsdl:part name="alertIdentifier" type="xsd:string"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="changeAlertStatusResponse">
+<wsdl:part name="changeAlertStatusReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="mergeEntitiesRequest">
+<wsdl:part name="alertIdentifier1" type="xsd:string"> </wsdl:part>
+<wsdl:part name="alertIdentifier2" type="xsd:string"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="recalcConsolidationResponse">
+<wsdl:part name="recalcConsolidationReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="getMaskedAlertsRequest">
+<wsdl:part name="alertIdentifiers" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+<wsdl:part name="zipped" type="xsd:boolean"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="addFindingsReasonsResponse">
+<wsdl:part name="addFindingsReasonsReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="addAlertsRequest">
+<wsdl:part name="alerts" type="impl:ArrayOf_tns1_Alert"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="removeFindingsReasonsRequest">
+<wsdl:part name="alertIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="reasons" type="impl:ArrayOf_tns1_Reason"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="migratingCaseToCaseItemRequest">
+<wsdl:part name="mappingFileBytesArr" type="xsd:base64Binary"> </wsdl:part>
+<wsdl:part name="acmQueryIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="acmQueryParameters_arr" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+<wsdl:part name="numOfThreads" type="xsd:string"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="addAttachmentToFormResponse">
+<wsdl:part name="addAttachmentToFormReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="removeRelationsRequest">
+<wsdl:part name="alertIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="relations" type="impl:ArrayOf_tns1_RelationData"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="escapeNoteContentForRichTextResponse"> </wsdl:message>
+<wsdl:message name="writeAndArchiveAlertsToFileByQueryResponse">
+<wsdl:part name="writeAndArchiveAlertsToFileByQueryReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="historicalExternalEntitiesExtractionRequest">
+<wsdl:part name="acmQueryIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="acmQueryParameters_arr" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="updateAlertRequest">
+<wsdl:part name="alertIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="alert" type="tns1:Alert"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="deleteAlertsRequest">
+<wsdl:part name="drillDownQueryIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="drillDownQueryParameters" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+<wsdl:part name="physicalDelete" type="xsd:boolean"> </wsdl:part>
+<wsdl:part name="requireAudit" type="xsd:boolean"> </wsdl:part>
+<wsdl:part name="forceDependency" type="xsd:boolean"> </wsdl:part>
+<wsdl:part name="continueOnError" type="xsd:boolean"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="addRelationsResponse">
+<wsdl:part name="addRelationsReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="markAlertsAsArchivedRequest">
+<wsdl:part name="drillDownQueryIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="drillDownQueryParameters" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="markAlertsAsArchivedResponse">
+<wsdl:part name="markAlertsAsArchivedReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="addExternalAuditResponse">
+<wsdl:part name="addExternalAuditReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="mergeEntitiesResponse">
+<wsdl:part name="mergeEntitiesReturn" type="tns1:ACMResult"> </wsdl:part>
+<wsdl:part name="mergeTargetIdentifierHolder" type="xsd:string"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="updateAlertResponse">
+<wsdl:part name="updateAlertReturn" type="tns1:ACMResult"> </wsdl:part>
+<wsdl:part name="alertResult" type="tns1:AlertResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="getAlertsResponse">
+<wsdl:part name="getAlertsReturn" type="tns1:ACMResult"> </wsdl:part>
+<wsdl:part name="alertDataList" type="tns1:AlertDataList"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="addExternalAuditRequest">
+<wsdl:part name="alertIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="auditComment" type="xsd:string"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="purgeAlertsRequest">
+<wsdl:part name="alertIdentifiers" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="writeAlertsToFileByQueryResponse3">
+<wsdl:part name="writeAlertsToFileByQueryReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="writeAlertsToFileByQueryResponse1">
+<wsdl:part name="writeAlertsToFileByQueryReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="markAlertsAsArchivedRequest1">
+<wsdl:part name="filter" type="xsd:string"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="writeAlertsToFileByQueryResponse2">
+<wsdl:part name="writeAlertsToFileByQueryReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="writeAlertsToFileByQueryRequest">
+<wsdl:part name="alertFilter" type="xsd:string"> </wsdl:part>
+<wsdl:part name="exportFormatEnum" type="tns1:ExportFormatEnum"> </wsdl:part>
+<wsdl:part name="prefix" type="xsd:string"> </wsdl:part>
+<wsdl:part name="suffix" type="xsd:string"> </wsdl:part>
+<wsdl:part name="extension" type="xsd:string"> </wsdl:part>
+<wsdl:part name="overwriteExisting" type="xsd:boolean"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="getMaskedAlertsResponse">
+<wsdl:part name="getMaskedAlertsReturn" type="tns1:ACMResult"> </wsdl:part>
+<wsdl:part name="alertsHolder" type="tns1:MaskedAlertList"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="addFindingsReasonsRequest">
+<wsdl:part name="alertIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="reasons" type="impl:ArrayOf_tns1_Reason"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="changeAlertStatusResponse1">
+<wsdl:part name="changeAlertStatusReturn" type="tns1:ACMResult"> </wsdl:part>
+<wsdl:part name="alertResultList" type="impl:ArrayOf_tns1_AlertResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="addRelationsRequest">
+<wsdl:part name="alertIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="relations" type="impl:ArrayOf_tns1_RelationData"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="addNotesResponse">
+<wsdl:part name="addNotesReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="addNotesRequest">
+<wsdl:part name="alertIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="notes" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+<wsdl:part name="isConfidential" type="xsd:boolean"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="writeAndArchiveAlertsToFileByQueryRequest">
+<wsdl:part name="drillDownQueryIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="drillDownQueryParameters" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+<wsdl:part name="exportFormatEnum" type="tns1:ExportFormatEnum"> </wsdl:part>
+<wsdl:part name="prefix" type="xsd:string"> </wsdl:part>
+<wsdl:part name="suffix" type="xsd:string"> </wsdl:part>
+<wsdl:part name="extension" type="xsd:string"> </wsdl:part>
+<wsdl:part name="overwriteExisting" type="xsd:boolean"> </wsdl:part>
+<wsdl:part name="isAlertDir" type="xsd:boolean"> </wsdl:part>
+<wsdl:part name="isZip" type="xsd:boolean"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="addAlertsWithConsolidationRequest">
+<wsdl:part name="alertsForConsolidation" type="impl:ArrayOf_tns1_RelationDataForConsolidation"> </wsdl:part>
+<wsdl:part name="consolidationProperties" type="xsd:string"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="exportWorkItemsResponse">
+<wsdl:part name="exportWorkItemsReturn" type="tns1:ACMResult"> </wsdl:part>
+<wsdl:part name="processID" type="xsd:string"> </wsdl:part>
+<wsdl:part name="acmObjectPackage" type="xsd:base64Binary"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="writeAlertsToFileByQueryRequest2">
+<wsdl:part name="alertFilter" type="xsd:string"> </wsdl:part>
+<wsdl:part name="exportFormatEnum" type="tns1:ExportFormatEnum"> </wsdl:part>
+<wsdl:part name="prefix" type="xsd:string"> </wsdl:part>
+<wsdl:part name="suffix" type="xsd:string"> </wsdl:part>
+<wsdl:part name="extension" type="xsd:string"> </wsdl:part>
+<wsdl:part name="overwriteExisting" type="xsd:boolean"> </wsdl:part>
+<wsdl:part name="isAlertDir" type="xsd:boolean"> </wsdl:part>
+<wsdl:part name="isZip" type="xsd:boolean"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="writeAndArchiveAlertsToFileByQueryResponse2">
+<wsdl:part name="writeAndArchiveAlertsToFileByQueryReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="addAttachmentToAlertResponse">
+<wsdl:part name="addAttachmentToAlertReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="writeAlertsToFileByQueryRequest1">
+<wsdl:part name="drillDownQueryIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="drillDownQueryParameters" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+<wsdl:part name="exportFormatEnum" type="tns1:ExportFormatEnum"> </wsdl:part>
+<wsdl:part name="prefix" type="xsd:string"> </wsdl:part>
+<wsdl:part name="suffix" type="xsd:string"> </wsdl:part>
+<wsdl:part name="extension" type="xsd:string"> </wsdl:part>
+<wsdl:part name="overwriteExisting" type="xsd:boolean"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="writeAndArchiveAlertsToFileByQueryResponse3">
+<wsdl:part name="writeAndArchiveAlertsToFileByQueryReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="markAlertsAsArchivedResponse1">
+<wsdl:part name="markAlertsAsArchivedReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="writeAlertsToFileByQueryRequest3">
+<wsdl:part name="drillDownQueryIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="drillDownQueryParameters" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+<wsdl:part name="exportFormatEnum" type="tns1:ExportFormatEnum"> </wsdl:part>
+<wsdl:part name="prefix" type="xsd:string"> </wsdl:part>
+<wsdl:part name="suffix" type="xsd:string"> </wsdl:part>
+<wsdl:part name="extension" type="xsd:string"> </wsdl:part>
+<wsdl:part name="overwriteExisting" type="xsd:boolean"> </wsdl:part>
+<wsdl:part name="isAlertDir" type="xsd:boolean"> </wsdl:part>
+<wsdl:part name="isZip" type="xsd:boolean"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="writeAndArchiveAlertsToFileByQueryResponse1">
+<wsdl:part name="writeAndArchiveAlertsToFileByQueryReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="recalcConsolidationRequest">
+<wsdl:part name="alertIdentifiers" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="addAttachmentToAlertRequest">
+<wsdl:part name="alertIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="data" type="tns1:AttachmentData"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="addAlertsResponse">
+<wsdl:part name="addAlertsReturn" type="tns1:ACMResult"> </wsdl:part>
+<wsdl:part name="alertResults" type="impl:ArrayOf_tns1_AlertResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="exportWorkItemsRequest">
+<wsdl:part name="drillDownQueryIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="drillDownQueryParameters" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+<wsdl:part name="apfDescription" type="xsd:string"> </wsdl:part>
+<wsdl:part name="processID" type="xsd:string"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="addAttachmentToFormRequest">
+<wsdl:part name="formIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="data" type="tns1:AttachmentData"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="getAlertsRequest">
+<wsdl:part name="selectFields" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+<wsdl:part name="sqlFilter" type="xsd:string"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="getAlerts2Request">
+<wsdl:part name="alertIdentifiers" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+<wsdl:part name="zipped" type="xsd:boolean"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="getAlerts2Response">
+<wsdl:part name="getAlerts2Return" type="tns1:ACMResult"> </wsdl:part>
+<wsdl:part name="alerts" type="impl:ArrayOf_tns1_Alert"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="changeAlertStatusRequest1">
+<wsdl:part name="alertsIdentifiers" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+<wsdl:part name="statusIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="forceStatus" type="xsd:boolean"> </wsdl:part>
+<wsdl:part name="additionalComments" type="xsd:string"> </wsdl:part>
+<wsdl:part name="alertResultList" type="impl:ArrayOf_tns1_AlertResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="addAlertsWithConsolidationResponse">
+<wsdl:part name="addAlertsWithConsolidationReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="escapeNoteContentForRichTextRequest">
+<wsdl:part name="notes" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="createRFIResponse">
+<wsdl:part name="createRFIReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="changeAlertStatusRequest">
+<wsdl:part name="alertIdentifiers" type="impl:ArrayOf_xsd_string"> </wsdl:part>
+<wsdl:part name="statusIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="note" type="xsd:string"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="createRFIRequest">
+<wsdl:part name="alertIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="rfiTemplateIdentifier" type="xsd:string"> </wsdl:part>
+<wsdl:part name="rfiContent" type="tns1:RFIContent"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="deleteAlertsResponse">
+<wsdl:part name="deleteAlertsReturn" type="tns1:ACMResult"> </wsdl:part>
+<wsdl:part name="resultHolder" type="impl:ArrayOf_tns1_Result"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="writeAlertsToFileByQueryResponse">
+<wsdl:part name="writeAlertsToFileByQueryReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="historicalExternalEntitiesExtractionResponse">
+<wsdl:part name="historicalExternalEntitiesExtractionReturn" type="tns1:ACMResult"> </wsdl:part>
+</wsdl:message>
+<wsdl:message name="getAlertByIdentifierResponse">
+<wsdl:part name="getAlertByIdentifierReturn" type="tns1:ACMResult"> </wsdl:part>
+<wsdl:part name="alert" type="tns1:Alert"> </wsdl:part>
+</wsdl:message>
+<wsdl:portType name="ACMAlertsService">
+<wsdl:operation name="getAlerts" parameterOrder="selectFields sqlFilter alertDataList">
+<wsdl:input message="impl:getAlertsRequest" name="getAlertsRequest"> </wsdl:input>
+<wsdl:output message="impl:getAlertsResponse" name="getAlertsResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="addAlerts" parameterOrder="alerts alertResults">
+<wsdl:input message="impl:addAlertsRequest" name="addAlertsRequest"> </wsdl:input>
+<wsdl:output message="impl:addAlertsResponse" name="addAlertsResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="addAlertsWithConsolidation" parameterOrder="alertsForConsolidation consolidationProperties">
+<wsdl:input message="impl:addAlertsWithConsolidationRequest" name="addAlertsWithConsolidationRequest"> </wsdl:input>
+<wsdl:output message="impl:addAlertsWithConsolidationResponse" name="addAlertsWithConsolidationResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="recalcConsolidation" parameterOrder="alertIdentifiers">
+<wsdl:input message="impl:recalcConsolidationRequest" name="recalcConsolidationRequest"> </wsdl:input>
+<wsdl:output message="impl:recalcConsolidationResponse" name="recalcConsolidationResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="updateAlert" parameterOrder="alertIdentifier alert alertResult">
+<wsdl:input message="impl:updateAlertRequest" name="updateAlertRequest"> </wsdl:input>
+<wsdl:output message="impl:updateAlertResponse" name="updateAlertResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="addExternalAudit" parameterOrder="alertIdentifier auditComment">
+<wsdl:input message="impl:addExternalAuditRequest" name="addExternalAuditRequest"> </wsdl:input>
+<wsdl:output message="impl:addExternalAuditResponse" name="addExternalAuditResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="deleteAlerts" parameterOrder="drillDownQueryIdentifier drillDownQueryParameters physicalDelete requireAudit forceDependency continueOnError resultHolder">
+<wsdl:input message="impl:deleteAlertsRequest" name="deleteAlertsRequest"> </wsdl:input>
+<wsdl:output message="impl:deleteAlertsResponse" name="deleteAlertsResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="getAlertByIdentifier" parameterOrder="alertIdentifier alert">
+<wsdl:input message="impl:getAlertByIdentifierRequest" name="getAlertByIdentifierRequest"> </wsdl:input>
+<wsdl:output message="impl:getAlertByIdentifierResponse" name="getAlertByIdentifierResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="purgeAlerts" parameterOrder="alertIdentifiers results">
+<wsdl:input message="impl:purgeAlertsRequest" name="purgeAlertsRequest"> </wsdl:input>
+<wsdl:output message="impl:purgeAlertsResponse" name="purgeAlertsResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="getAlerts2" parameterOrder="alertIdentifiers zipped alerts">
+<wsdl:input message="impl:getAlerts2Request" name="getAlerts2Request"> </wsdl:input>
+<wsdl:output message="impl:getAlerts2Response" name="getAlerts2Response"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="getMaskedAlerts" parameterOrder="alertIdentifiers zipped alertsHolder">
+<wsdl:input message="impl:getMaskedAlertsRequest" name="getMaskedAlertsRequest"> </wsdl:input>
+<wsdl:output message="impl:getMaskedAlertsResponse" name="getMaskedAlertsResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="changeAlertStatus" parameterOrder="alertIdentifiers statusIdentifier note">
+<wsdl:input message="impl:changeAlertStatusRequest" name="changeAlertStatusRequest"> </wsdl:input>
+<wsdl:output message="impl:changeAlertStatusResponse" name="changeAlertStatusResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="addAttachmentToAlert" parameterOrder="alertIdentifier data">
+<wsdl:input message="impl:addAttachmentToAlertRequest" name="addAttachmentToAlertRequest"> </wsdl:input>
+<wsdl:output message="impl:addAttachmentToAlertResponse" name="addAttachmentToAlertResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="addRelations" parameterOrder="alertIdentifier relations">
+<wsdl:input message="impl:addRelationsRequest" name="addRelationsRequest"> </wsdl:input>
+<wsdl:output message="impl:addRelationsResponse" name="addRelationsResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="removeRelations" parameterOrder="alertIdentifier relations">
+<wsdl:input message="impl:removeRelationsRequest" name="removeRelationsRequest"> </wsdl:input>
+<wsdl:output message="impl:removeRelationsResponse" name="removeRelationsResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="mergeEntities" parameterOrder="alertIdentifier1 alertIdentifier2 mergeTargetIdentifierHolder">
+<wsdl:input message="impl:mergeEntitiesRequest" name="mergeEntitiesRequest"> </wsdl:input>
+<wsdl:output message="impl:mergeEntitiesResponse" name="mergeEntitiesResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="addNotes" parameterOrder="alertIdentifier notes isConfidential">
+<wsdl:input message="impl:addNotesRequest" name="addNotesRequest"> </wsdl:input>
+<wsdl:output message="impl:addNotesResponse" name="addNotesResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="addFindingsReasons" parameterOrder="alertIdentifier reasons">
+<wsdl:input message="impl:addFindingsReasonsRequest" name="addFindingsReasonsRequest"> </wsdl:input>
+<wsdl:output message="impl:addFindingsReasonsResponse" name="addFindingsReasonsResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="removeFindingsReasons" parameterOrder="alertIdentifier reasons">
+<wsdl:input message="impl:removeFindingsReasonsRequest" name="removeFindingsReasonsRequest"> </wsdl:input>
+<wsdl:output message="impl:removeFindingsReasonsResponse" name="removeFindingsReasonsResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="createRFI" parameterOrder="alertIdentifier rfiTemplateIdentifier rfiContent">
+<wsdl:input message="impl:createRFIRequest" name="createRFIRequest"> </wsdl:input>
+<wsdl:output message="impl:createRFIResponse" name="createRFIResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="exportWorkItems" parameterOrder="drillDownQueryIdentifier drillDownQueryParameters apfDescription processID acmObjectPackage">
+<wsdl:input message="impl:exportWorkItemsRequest" name="exportWorkItemsRequest"> </wsdl:input>
+<wsdl:output message="impl:exportWorkItemsResponse" name="exportWorkItemsResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="migratingCaseToCaseItem" parameterOrder="mappingFileBytesArr acmQueryIdentifier acmQueryParameters_arr numOfThreads">
+<wsdl:input message="impl:migratingCaseToCaseItemRequest" name="migratingCaseToCaseItemRequest"> </wsdl:input>
+<wsdl:output message="impl:migratingCaseToCaseItemResponse" name="migratingCaseToCaseItemResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="addAttachmentToForm" parameterOrder="formIdentifier data">
+<wsdl:input message="impl:addAttachmentToFormRequest" name="addAttachmentToFormRequest"> </wsdl:input>
+<wsdl:output message="impl:addAttachmentToFormResponse" name="addAttachmentToFormResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="writeAlertsToFileByQuery" parameterOrder="alertFilter exportFormatEnum prefix suffix extension overwriteExisting">
+<wsdl:input message="impl:writeAlertsToFileByQueryRequest" name="writeAlertsToFileByQueryRequest"> </wsdl:input>
+<wsdl:output message="impl:writeAlertsToFileByQueryResponse" name="writeAlertsToFileByQueryResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="writeAlertsToFileByQuery" parameterOrder="drillDownQueryIdentifier drillDownQueryParameters exportFormatEnum prefix suffix extension overwriteExisting">
+<wsdl:input message="impl:writeAlertsToFileByQueryRequest1" name="writeAlertsToFileByQueryRequest1"> </wsdl:input>
+<wsdl:output message="impl:writeAlertsToFileByQueryResponse1" name="writeAlertsToFileByQueryResponse1"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="writeAlertsToFileByQuery" parameterOrder="alertFilter exportFormatEnum prefix suffix extension overwriteExisting isAlertDir isZip">
+<wsdl:input message="impl:writeAlertsToFileByQueryRequest2" name="writeAlertsToFileByQueryRequest2"> </wsdl:input>
+<wsdl:output message="impl:writeAlertsToFileByQueryResponse2" name="writeAlertsToFileByQueryResponse2"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="writeAlertsToFileByQuery" parameterOrder="drillDownQueryIdentifier drillDownQueryParameters exportFormatEnum prefix suffix extension overwriteExisting isAlertDir isZip">
+<wsdl:input message="impl:writeAlertsToFileByQueryRequest3" name="writeAlertsToFileByQueryRequest3"> </wsdl:input>
+<wsdl:output message="impl:writeAlertsToFileByQueryResponse3" name="writeAlertsToFileByQueryResponse3"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="markAlertsAsArchived" parameterOrder="drillDownQueryIdentifier drillDownQueryParameters">
+<wsdl:input message="impl:markAlertsAsArchivedRequest" name="markAlertsAsArchivedRequest"> </wsdl:input>
+<wsdl:output message="impl:markAlertsAsArchivedResponse" name="markAlertsAsArchivedResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="markAlertsAsArchived" parameterOrder="filter">
+<wsdl:input message="impl:markAlertsAsArchivedRequest1" name="markAlertsAsArchivedRequest1"> </wsdl:input>
+<wsdl:output message="impl:markAlertsAsArchivedResponse1" name="markAlertsAsArchivedResponse1"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="writeAndArchiveAlertsToFileByQuery" parameterOrder="drillDownQueryIdentifier drillDownQueryParameters exportFormatEnum prefix suffix extension overwriteExisting isAlertDir isZip">
+<wsdl:input message="impl:writeAndArchiveAlertsToFileByQueryRequest" name="writeAndArchiveAlertsToFileByQueryRequest"> </wsdl:input>
+<wsdl:output message="impl:writeAndArchiveAlertsToFileByQueryResponse" name="writeAndArchiveAlertsToFileByQueryResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="writeAndArchiveAlertsToFileByQuery" parameterOrder="alertFilter exportFormatEnum prefix suffix extension overwriteExisting isAlertDir isZip">
+<wsdl:input message="impl:writeAndArchiveAlertsToFileByQueryRequest1" name="writeAndArchiveAlertsToFileByQueryRequest1"> </wsdl:input>
+<wsdl:output message="impl:writeAndArchiveAlertsToFileByQueryResponse1" name="writeAndArchiveAlertsToFileByQueryResponse1"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="writeAndArchiveAlertsToFileByQuery" parameterOrder="drillDownQueryIdentifier drillDownQueryParameters exportFormatEnum prefix suffix extension overwriteExisting">
+<wsdl:input message="impl:writeAndArchiveAlertsToFileByQueryRequest2" name="writeAndArchiveAlertsToFileByQueryRequest2"> </wsdl:input>
+<wsdl:output message="impl:writeAndArchiveAlertsToFileByQueryResponse2" name="writeAndArchiveAlertsToFileByQueryResponse2"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="writeAndArchiveAlertsToFileByQuery" parameterOrder="alertFilter exportFormatEnum prefix suffix extension overwriteExisting">
+<wsdl:input message="impl:writeAndArchiveAlertsToFileByQueryRequest3" name="writeAndArchiveAlertsToFileByQueryRequest3"> </wsdl:input>
+<wsdl:output message="impl:writeAndArchiveAlertsToFileByQueryResponse3" name="writeAndArchiveAlertsToFileByQueryResponse3"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="changeAlertStatus" parameterOrder="alertsIdentifiers statusIdentifier forceStatus additionalComments alertResultList">
+<wsdl:input message="impl:changeAlertStatusRequest1" name="changeAlertStatusRequest1"> </wsdl:input>
+<wsdl:output message="impl:changeAlertStatusResponse1" name="changeAlertStatusResponse1"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="escapeNoteContentForRichText" parameterOrder="notes">
+<wsdl:input message="impl:escapeNoteContentForRichTextRequest" name="escapeNoteContentForRichTextRequest"> </wsdl:input>
+<wsdl:output message="impl:escapeNoteContentForRichTextResponse" name="escapeNoteContentForRichTextResponse"> </wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="historicalExternalEntitiesExtraction" parameterOrder="acmQueryIdentifier acmQueryParameters_arr">
+<wsdl:input message="impl:historicalExternalEntitiesExtractionRequest" name="historicalExternalEntitiesExtractionRequest"> </wsdl:input>
+<wsdl:output message="impl:historicalExternalEntitiesExtractionResponse" name="historicalExternalEntitiesExtractionResponse"> </wsdl:output>
+</wsdl:operation>
+</wsdl:portType>
+<wsdl:binding name="alertsServiceSoapBinding" type="impl:ACMAlertsService">
+<wsdlsoap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+<wsdl:operation name="getAlerts">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="getAlertsRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="getAlertsResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="addAlerts">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="addAlertsRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="addAlertsResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="addAlertsWithConsolidation">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="addAlertsWithConsolidationRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="addAlertsWithConsolidationResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="recalcConsolidation">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="recalcConsolidationRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="recalcConsolidationResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="updateAlert">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="updateAlertRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="updateAlertResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="addExternalAudit">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="addExternalAuditRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="addExternalAuditResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="deleteAlerts">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="deleteAlertsRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="deleteAlertsResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="getAlertByIdentifier">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="getAlertByIdentifierRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="getAlertByIdentifierResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="purgeAlerts">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="purgeAlertsRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="purgeAlertsResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="getAlerts2">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="getAlerts2Request">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="getAlerts2Response">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="getMaskedAlerts">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="getMaskedAlertsRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="getMaskedAlertsResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="changeAlertStatus">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="changeAlertStatusRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="changeAlertStatusResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="addAttachmentToAlert">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="addAttachmentToAlertRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="addAttachmentToAlertResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="addRelations">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="addRelationsRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="addRelationsResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="removeRelations">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="removeRelationsRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="removeRelationsResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="mergeEntities">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="mergeEntitiesRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="mergeEntitiesResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="addNotes">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="addNotesRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="addNotesResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="addFindingsReasons">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="addFindingsReasonsRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="addFindingsReasonsResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="removeFindingsReasons">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="removeFindingsReasonsRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="removeFindingsReasonsResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="createRFI">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="createRFIRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="createRFIResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="exportWorkItems">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="exportWorkItemsRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="exportWorkItemsResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="migratingCaseToCaseItem">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="migratingCaseToCaseItemRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="migratingCaseToCaseItemResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="addAttachmentToForm">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="addAttachmentToFormRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="addAttachmentToFormResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="writeAlertsToFileByQuery">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="writeAlertsToFileByQueryRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://webService.actimize.com" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="writeAlertsToFileByQueryResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="writeAlertsToFileByQuery">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="writeAlertsToFileByQueryRequest1">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://webService.actimize.com" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="writeAlertsToFileByQueryResponse1">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="writeAlertsToFileByQuery">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="writeAlertsToFileByQueryRequest2">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://webService.actimize.com" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="writeAlertsToFileByQueryResponse2">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="writeAlertsToFileByQuery">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="writeAlertsToFileByQueryRequest3">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://webService.actimize.com" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="writeAlertsToFileByQueryResponse3">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="markAlertsAsArchived">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="markAlertsAsArchivedRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://webService.actimize.com" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="markAlertsAsArchivedResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="markAlertsAsArchived">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="markAlertsAsArchivedRequest1">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://webService.actimize.com" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="markAlertsAsArchivedResponse1">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="writeAndArchiveAlertsToFileByQuery">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="writeAndArchiveAlertsToFileByQueryRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://webService.actimize.com" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="writeAndArchiveAlertsToFileByQueryResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="writeAndArchiveAlertsToFileByQuery">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="writeAndArchiveAlertsToFileByQueryRequest1">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://webService.actimize.com" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="writeAndArchiveAlertsToFileByQueryResponse1">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="writeAndArchiveAlertsToFileByQuery">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="writeAndArchiveAlertsToFileByQueryRequest2">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://webService.actimize.com" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="writeAndArchiveAlertsToFileByQueryResponse2">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="writeAndArchiveAlertsToFileByQuery">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="writeAndArchiveAlertsToFileByQueryRequest3">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://webService.actimize.com" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="writeAndArchiveAlertsToFileByQueryResponse3">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="changeAlertStatus">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="changeAlertStatusRequest1">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://webService.actimize.com" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="changeAlertStatusResponse1">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="escapeNoteContentForRichText">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="escapeNoteContentForRichTextRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://webService.actimize.com" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="escapeNoteContentForRichTextResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+<wsdl:operation name="historicalExternalEntitiesExtraction">
+<wsdlsoap:operation soapAction=""/>
+<wsdl:input name="historicalExternalEntitiesExtractionRequest">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://webService.actimize.com" use="encoded"/>
+</wsdl:input>
+<wsdl:output name="historicalExternalEntitiesExtractionResponse">
+<wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://localhost:8080/ActOne/services/alertsService" use="encoded"/>
+</wsdl:output>
+</wsdl:operation>
+</wsdl:binding>
+<wsdl:service name="ACMAlertsServiceService">
+<wsdl:port binding="impl:alertsServiceSoapBinding" name="alertsService">
+<wsdlsoap:address location="http://localhost:8080/ActOne/services/alertsService"/>
+</wsdl:port>
+</wsdl:service>
+</wsdl:definitions>
