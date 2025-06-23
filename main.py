@@ -1,7 +1,8 @@
 import os
-from db_connection import establish_sql_connection
-from report_xml_classifier_v2 import classify_reports_by_status, export_reports_to_csv, parse_xml_files
 import logging
+from db_usage import update_db,establish_sql_connection
+from report_xml_classifier_v2 import classify_reports_by_status, export_reports_to_csv, parse_xml_files
+from update_alert_soap import ActOne_login_and_get_session, add_notes_request
 
 logging.basicConfig(level=logging.INFO)
 
@@ -14,16 +15,57 @@ def main(directory: str) -> None:
     error_csv, valid_csv = export_reports_to_csv(error_reports, valid_reports, output_directory=export_directory)
     logging.info(f"Error reports saved to: {error_csv}")
     logging.info(f"Valid reports saved to: {valid_csv}")
-    # Establish a database connection
+    summary_report = []
+    alert_id = None
+   # Establish a database connection
     connection = establish_sql_connection()
     if connection:
         logging.info("Database connection established successfully.")
         # Here you can add code to interact with the database if needed
-        connection.close()
+        if valid_reports:
+           summary_report, alert_id = update_db(connection, valid_reports)
+        if error_reports:
+           summary_report, alert_id = update_db(connection, error_reports)
     else:
         logging.error("Failed to establish database connection.")
+    connection.close()
+
+    client, session = ActOne_login_and_get_session()
+
+    response  = add_notes_request(client, alert_id, summary_report, is_confidential=False)
+    logging.info(f"Notes added to alert {alert_id}: {response}")
+    # Close the session after all operations are done
+    session.close()
+    # send a summery reprt via addNotes service under 'alertsService'
+
+    
+    
 
 
 if __name__ == "__main__":
     INPUT_DIR = "C:\\Users\\dvirbo\\Desktop\\mizrahi\\documents_20250527"
     main(INPUT_DIR)
+
+
+    '''
+    step 1: Parse XML files from the input directory
+    step 2: Classify reports by status (error or valid) 
+    step 3: Export classified reports to CSV files
+    step 4: 
+        if the report is valid:
+        - update 3 DB table 
+        - connect to the ActOne service to add note and change the status of the alert
+    
+        if the report isn't valid:
+        - update 
+        
+    
+    #Establish a database connection (need to make it secure)
+    # TODO  step 5: update/ insert the reports to the database 
+    # TODO  step 6: send the error reports via email to the relevant recipients
+    # TODO: use the addNotes service under 'alertsService'
+    # TODO: cr
+    
+    '''
+    
+

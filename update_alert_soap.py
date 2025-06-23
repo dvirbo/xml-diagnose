@@ -34,7 +34,7 @@ def get_alert_by_identifier(client, identifier):
         print('[ERROR] SOAP call failed:', e)
         return None
 
-def prepare_updated_alert_data(alert_response, new_score='26'):
+def prepare_updated_alert_data(alert_response, new_score='55'):
     """Prepare the alert data dictionary for update."""
     return {
         'alertAISCallXML': alert_response.alert.alertAISCallXML,
@@ -87,38 +87,62 @@ def change_alert_status(client, alert_identifiers, status_identifier, note=""):
     except Exception as e:
         print('[ERROR] Failed to change alert status:', e)
         return None
+    
 
-def main():
-    # Configuration
+
+def add_notes_request(client, alert_identifier, notes, is_confidential=False):
+    """
+    Add notes to an alert using the SOAP service.
+
+    :param client: Zeep client instance
+    :param alert_identifier: The alert identifier (string)
+    :param notes: List of note strings to add
+    :param is_confidential: Boolean flag for confidentiality
+    :return: SOAP response
+    """
+    try:
+        response = client.service.addNotes(
+            alertIdentifier=alert_identifier,
+            notes=notes,
+            isConfidential=is_confidential
+        )
+        print('[SUCCESS] Notes added:', response)
+        return response
+    except Exception as e:
+        print('[ERROR] Failed to add notes:', e)
+        return None
+
+def ActOne_login_and_get_session():
     login_url = 'http://localhost:8080/ActOne/api/public/v1/auth/login'
     login_data = {
         'username': 'admin',
         'password': 'password'
     }
     wsdl_url = os.path.join(os.path.dirname(__file__), 'alertsService.wsdl')
-    identifier = 'SAM1-1867'
 
     # Step 1: Authenticate
     session = login_and_get_session(login_url, login_data)
     if not session:
+        print('[ERROR] Failed to create session')
         return
 
     # Step 2: Create SOAP client
     client = create_zeep_client(wsdl_url, session)
+    
+    return client, session
 
-    # Step 3: Get alert data
-    response = get_alert_by_identifier(client, identifier)
-    if not response:
-        return
 
-    # Step 4: Prepare and save updated alert data
-    updated_alert_data = prepare_updated_alert_data(response)
-    save_alert_data_to_file(updated_alert_data)
+def main():
+    
+    # updated_alert_data = prepare_updated_alert_data(response)
+    # save_alert_data_to_file(updated_alert_data)
 
-    # Step 5: Update the alert
-    update_alert(client, identifier, updated_alert_data)
+    # update_alert(client, identifier, updated_alert_data)
 
     # Step 6: close the session
+
+    client, session = ActOne_login_and_get_session()  
+    add_notes_request(client, 'SAM1-2025', ['This is a test note\n with a newline'], is_confidential=False)
     session.close()
 
 if __name__ == "__main__":
