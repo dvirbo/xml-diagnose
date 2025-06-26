@@ -72,15 +72,17 @@ def update_alert(client, identifier, updated_alert_data):
         print('[ERROR] Failed to update alert:', e)
         return None
 
-def change_alert_status(client, alert_identifiers, status_identifier, note=""):
+def change_alert_status(client, alert_identifiers, status_identifier, force_status=False, additional_comments="", alert_result_list=None):
     """
     Change the status of one or more alerts using the SOAP service.
     """
     try:
         response = client.service.changeAlertStatus(
-            alertIdentifiers=alert_identifiers,
+            alertsIdentifiers=alert_identifiers,
             statusIdentifier=status_identifier,
-            note=note
+            forceStatus=force_status,
+            additionalComments=additional_comments,
+            alertResultList=alert_result_list
         )
         print('[SUCCESS] Alert status changed:', response)
         return response
@@ -140,10 +142,23 @@ def main():
     # update_alert(client, identifier, updated_alert_data)
 
     # Step 6: close the session
+    
+    client, session = ActOne_login_and_get_session()
+   # change_alert_status(client, ['SAM1-2025'], 'Inv In Process', force_status=False, additional_comments='testing status change')
+    alert = get_alert_by_identifier(client, 'SAM1-2025')
+    if alert:
+        print(alert.alert.attributes[53])
+        alert.attributes[53].value = '55'
+        print(alert.alert.attributes[53])
 
-    client, session = ActOne_login_and_get_session()  
-    add_notes_request(client, 'SAM1-2025', ['This is a test note\n with a newline'], is_confidential=False)
+
+
+        
+    
     session.close()
-
 if __name__ == "__main__":
     main()
+
+
+
+    # __pydevd_ret_val_dict['get_alert_by_identifier'].alert.attributes[53]

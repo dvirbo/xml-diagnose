@@ -51,20 +51,18 @@ if __name__ == "__main__":
     step 1: Parse XML files from the input directory
     step 2: Classify reports by status (error or valid) 
     step 3: Export classified reports to CSV files
-    step 4: 
-        if the report is valid:
-        - update 3 DB table 
-        - connect to the ActOne service to add note and change the status of the alert
-    
-        if the report isn't valid:
-        - update 
+    step 4: Establish a database connection
+    step 5: update the 3 database tables with the reports
+    step 6: connect to the ActOne service
+    step 7: add_notes_request to the alert with the summary report
+    step 8: 
+
         
     
     #Establish a database connection (need to make it secure)
     # TODO  step 5: update/ insert the reports to the database 
     # TODO  step 6: send the error reports via email to the relevant recipients
     # TODO: use the addNotes service under 'alertsService'
-    # TODO: cr
     
     '''
     

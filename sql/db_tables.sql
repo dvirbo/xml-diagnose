@@ -20,3 +20,6 @@ CREATE TABLE IMP_REPORT_STATUS_TRACKING (
     Comments VARCHAR(500),
     FOREIGN KEY (Report_id, Alert_id) REFERENCES IMP_REPORT_LOG(Report_id, Alert_id)
 );
+
+
+ 
