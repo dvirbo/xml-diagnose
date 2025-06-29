@@ -6,11 +6,11 @@ SELECT TOP (1000) [alert_internal_id]
   FROM [actone].[dbo].[alerts]
   WHERE [alert_id] = 'SAM1-2025'
 
-  select top (2) *
-  from [dbo].[acm_alert_custom_attributes]
+--   select top (2) *
+--   from [dbo].[acm_alert_custom_attributes]
    
-select top (12) *
-from alerts
+-- select top (12) *
+-- from alerts
 
-select * from
-[dbo].[acm_md_alert_statuses]
+-- select * from
+-- [dbo].[acm_md_alert_statuses]

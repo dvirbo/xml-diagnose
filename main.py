@@ -54,15 +54,10 @@ if __name__ == "__main__":
     step 4: Establish a database connection
     step 5: update the 3 database tables with the reports
     step 6: connect to the ActOne service
-    step 7: add_notes_request to the alert with the summary report
-    step 8: 
+    step 7: # TODO update the relevant feilds in the alert with the new values
+    step 8: add_notes_request to the alert with the summary report
+    step 9: # TODO send the error reports via email to the relevant recipients
 
-        
-    
-    #Establish a database connection (need to make it secure)
-    # TODO  step 5: update/ insert the reports to the database 
-    # TODO  step 6: send the error reports via email to the relevant recipients
-    # TODO: use the addNotes service under 'alertsService'
     
     '''
     

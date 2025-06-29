@@ -8,17 +8,23 @@ import os
 def login_and_get_session(login_url, login_data):
     """Authenticate and return a requests.Session with cookies set."""
     session = requests.Session()
-    login_response = session.post(login_url, json=login_data)
-    if login_response.status_code != 200:
-        print('[ERROR] Login failed:', login_response.text)
+    try:
+        login_response = session.post(login_url, json=login_data)
+        if login_response.status_code != 200:
+            print('[ERROR] Login failed:', login_response.text)
+            session.close()  # Close session on failure
+            return None
+        print('[INFO] Logged in successfully')
+        return session
+    except Exception as e:
+        print('[ERROR] Login failed:', e)
+        session.close()  # Ensure session is closed on exception
         return None
-    print('[INFO] Logged in successfully')
-    return session
 
 def create_zeep_client(wsdl_url, session): 
     """Create a Zeep SOAP client using the authenticated session."""
-    transport = Transport(session=session, timeout=100)
-    settings = Settings(strict=False, xml_huge_tree=True)
+    transport = Transport(session=session, timeout=1000)
+    settings = Settings(strict=False, xml_huge_tree=True)  
     client = Client(wsdl=wsdl_url, transport=transport, settings=settings)
     return client
 
@@ -120,7 +126,7 @@ def ActOne_login_and_get_session():
         'username': 'admin',
         'password': 'password'
     }
-    wsdl_url = os.path.join(os.path.dirname(__file__), 'alertsService.wsdl')
+    wsdl_url = 'http://ifs-lab-2025:8080/ActOne/services/alertsService?wsdl'  # Use direct URL for WSDL
 
     # Step 1: Authenticate
     session = login_and_get_session(login_url, login_data)
@@ -144,18 +150,24 @@ def main():
     # Step 6: close the session
     
     client, session = ActOne_login_and_get_session()
-   # change_alert_status(client, ['SAM1-2025'], 'Inv In Process', force_status=False, additional_comments='testing status change')
-    alert = get_alert_by_identifier(client, 'SAM1-2025')
-    if alert:
-        print(alert.alert.attributes[53])
-        alert.attributes[53].value = '55'
-        print(alert.alert.attributes[53])
+    if not client or not session:
+        print("[ERROR] Failed to initialize client or session")
+        return
 
-
-
-        
-    
-    session.close()
+    try:
+        alert = get_alert_by_identifier(client, 'SAM1-2025')
+        if alert and 'alert' in alert and 'attributes' in alert['alert']:
+            for attr in alert['alert']['attributes']:
+                if attr['identifier'] == 'Mispar_tkina':
+                    attr['value'] = '112233'
+                    print(f"[INFO] Updated attribute: {attr}")
+                    break
+        else:
+            print("[ERROR] Alert or attributes not found.")
+        print(alert['alert']['attributes'])
+    finally:
+        session.close()  # Ensure session is closed in all cases
+        print("[INFO] Session closed")
 if __name__ == "__main__":
     main()
 
