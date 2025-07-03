@@ -1,36 +1,119 @@
 import requests
-from zeep import Client
-from zeep import Settings
+import requests_cache
+from zeep import Client, Settings
 from zeep.transports import Transport
-import os
+from services_methods import update_alert
+from zeep.plugins import HistoryPlugin
+import logging
 
+logging.basicConfig(level=logging.INFO)
 
 def login_and_get_session(login_url, login_data):
-    """Authenticate and return a requests.Session with cookies set."""
+    """
+    Authenticate to a given URL using provided login data and return a configured requests.Session.
+    Args:
+        login_url (str): The URL endpoint to send the login request to.
+        login_data (dict): The login credentials or payload to be sent in the request body.
+    Returns:
+        requests.Session or None: A requests.Session object with authentication cookies and headers set if login is successful, otherwise None.
+    Notes:
+        - If the login response contains a JSON Web Token (JWT) in the 'token' field, it will be added to the session headers as a Bearer token.
+        - Prints error messages if login fails or if the response cannot be parsed as JSON.
+    """
     session = requests.Session()
     try:
         login_response = session.post(login_url, json=login_data)
         if login_response.status_code != 200:
             print('[ERROR] Login failed:', login_response.text)
-            session.close()  # Close session on failure
+            session.close()
             return None
+
+        # Optional: If your login response returns a token
+        token = None
+        if login_response.headers.get('Content-Type', '').startswith('application/json'):
+            try:
+                token = login_response.json().get('token')
+            except Exception as e:
+                print('[ERROR] Failed to parse login response as JSON:', e)
+        if token:
+            session.headers.update({'Authorization': f'Bearer {token}'})
+
         print('[INFO] Logged in successfully')
         return session
     except Exception as e:
         print('[ERROR] Login failed:', e)
-        session.close()  # Ensure session is closed on exception
+        session.close()
         return None
 
-def create_zeep_client(wsdl_url, session): 
-    """Create a Zeep SOAP client using the authenticated session."""
-    # Ensure cookies and headers are passed to the Transport object
-    transport = Transport(session=session, timeout=1000)
-    settings = Settings(strict=False, xml_huge_tree=True)  
-    client = Client(wsdl=wsdl_url, transport=transport, settings=settings)
+
+
+def create_zeep_client(wsdl_url, auth_session):
+    """
+    Creates and returns a Zeep SOAP client with WSDL caching and authentication.
+    This function sets up a Zeep client for SOAP web services, using a cached session
+    for WSDL retrieval to improve performance. It copies cookies and headers from the
+    provided authenticated session, and optionally sets the Authorization header for
+    SOAP requests if present. The client is configured with relaxed XML parsing and
+    a history plugin for debugging.
+    Args:
+        wsdl_url (str): The URL to the WSDL file describing the SOAP service.
+        auth_session (requests.Session): An authenticated requests session containing
+            necessary cookies and headers for authentication.
+    Returns:
+        zeep.Client: A configured Zeep SOAP client ready for making service calls.
+    """
+    # Cache WSDL only — not SOAP calls
+    wsdl_session = requests_cache.CachedSession(
+        cache_name='zeep_wsdl_cache',
+        backend='sqlite',
+        expire_after=3600
+    )
+    wsdl_session.cookies.update(auth_session.cookies)
+    wsdl_session.headers.update(auth_session.headers)
+
+    transport = Transport(session=wsdl_session, timeout=1000)
+    settings = Settings(strict=False, xml_huge_tree=True)
+    history = HistoryPlugin()
+
+    client = Client(wsdl=wsdl_url, transport=transport, settings=settings, plugins=[history])
+
+    # Copy cookies from the authenticated session to the Zeep client
+    # This is necessary for maintaining the session state
+    if 'Authorization' in auth_session.headers:
+        auth_header = auth_session.headers['Authorization']
+        client.transport.session.headers['Authorization'] = auth_header
+
     return client
 
+
+
+def validate_session(session):
+    """Basic validation of session cookies and headers."""
+    if not session.cookies or not session.headers:
+        print('[ERROR] Session is invalid or expired.')
+        return False
+    print('[INFO] Session is valid.')
+    return True
+
+
+def ActOne_login_and_get_session():
+    login_url = 'http://localhost:8080/ActOne/api/public/v1/auth/login'
+    login_data = {
+        'username': 'admin',
+        'password': 'password'
+    }
+    wsdl_url = 'http://localhost:8080/ActOne/services/alertsService?wsdl'
+
+    session = login_and_get_session(login_url, login_data)
+    if not session or not validate_session(session):
+        print('[ERROR] Failed to create or validate session')
+        return None, None
+
+    client = create_zeep_client(wsdl_url, session)
+    return client, session
+
+
 def get_alert_by_identifier(client, identifier):
-    """Fetch alert data by identifier."""
     try:
         response = client.service.getAlertByIdentifier(identifier)
         file_name = f'alert_{identifier}.xml'
@@ -42,29 +125,8 @@ def get_alert_by_identifier(client, identifier):
         print('[ERROR] SOAP call failed:', e)
         return None
 
-def prepare_updated_alert_data(alert_response):
-    """Prepare the alert data dictionary for update.""" 
-    # Ensure all mandatory fields are included and properly formatted
-    updated_data = {
-        'alertAISCallXML': alert_response.alert.alertAISCallXML or '',
-        'alertDate': alert_response.alert.alertDate,
-        'alertIdentifier': alert_response.alert.alertIdentifier,
-        'alertTypeIdentifier': alert_response.alert.alertTypeIdentifier,
-        'alertTypeVersion': alert_response.alert.alertTypeVersion,
-        'attributes': alert_response.alert.attributes,
-        'buIdentifier': alert_response.alert.buIdentifier,
-        'details': alert_response.alert.details,
-        'ownerIdentifier': alert_response.alert.ownerIdentifier,
-        'score': 23,  # Example updated score
-        'statusIdentifier': alert_response.alert.statusIdentifier,
-        'useZippedXml': alert_response.alert.useZippedXml,
-        'xml': alert_response.alert.xml,
-        'zippedXml': alert_response.alert.zippedXml
-    }
-    return updated_data
 
 def save_alert_data_to_file(alert_data, filename='alert_data.xml'):
-    """Save alert data to a file for inspection."""
     try:
         with open(filename, 'w', encoding='utf-8') as f:
             f.write(str(alert_data))
@@ -72,134 +134,48 @@ def save_alert_data_to_file(alert_data, filename='alert_data.xml'):
     except Exception as e:
         print('[ERROR] Failed to prepare alert data:', e)
 
-def update_alert(client, identifier, updated_alert_data):
-    """Update the alert using the SOAP service."""
-    try:
-        update_response = client.service.updateAlert(
-            alertIdentifier=identifier, 
-            alert=updated_alert_data
-        )
-        if update_response and update_response.alertResult:
-            print('[INFO] AlertResult:', update_response.alertResult)
-        return update_response
-    except Exception as e:
-        print('[ERROR] Failed to update alert:', e)
-        return None
-
-def change_alert_status(client, alert_identifiers, status_identifier, force_status=False, additional_comments="", alert_result_list=None):
-    """
-    Change the status of one or more alerts using the SOAP service.
-    """
-    try:
-        response = client.service.changeAlertStatus(
-            alertsIdentifiers=alert_identifiers,
-            statusIdentifier=status_identifier,
-            forceStatus=force_status,
-            additionalComments=additional_comments,
-            alertResultList=alert_result_list
-        )
-        print('[SUCCESS] Alert status changed:', response)
-        return response
-    except Exception as e:
-        print('[ERROR] Failed to change alert status:', e)
-        return None
-    
-
-
-def add_notes_request(client, alert_identifier, notes, is_confidential=False):
-    """
-    Add notes to an alert using the SOAP service.
-
-    :param client: Zeep client instance
-    :param alert_identifier: The alert identifier (string)
-    :param notes: List of note strings to add
-    :param is_confidential: Boolean flag for confidentiality
-    :return: SOAP response
-    """
-    try:
-        response = client.service.addNotes(
-            alertIdentifier=alert_identifier,
-            notes=notes,
-            isConfidential=is_confidential
-        )
-        print('[SUCCESS] Notes added:', response)
-        return response
-    except Exception as e:
-        print('[ERROR] Failed to add notes:', e)
-        return None
-
-def validate_session(session):
-    """Validate the session by checking cookies and headers."""
-    if not session.cookies or not session.headers:
-        print('[ERROR] Session is invalid or expired.')
-        return False
-    print('[INFO] Session is valid.')
-    return True
-
-def ActOne_login_and_get_session():
-    login_url = 'http://localhost:8080/ActOne/api/public/v1/auth/login'
-    login_data = {
-        'username': 'admin',
-        'password': 'password'
-    }
-    wsdl_url = 'http://localhost:8080/ActOne/services/alertsService?wsdl'
-
-    # Step 1: Authenticate
-    session = login_and_get_session(login_url, login_data)
-    if not session or not validate_session(session):
-        print('[ERROR] Failed to create or validate session')
-        return None, None
-
-    # Step 2: Create SOAP client
-    client = create_zeep_client(wsdl_url, session)
-    return client, session
 
 def main():
-    
-    alert_id = 'SAM1-2199'
+    alert_id = 'SAM1-2201'
     client, session = ActOne_login_and_get_session()
     if not client or not session:
-        print("[ERROR] Failed to initialize client or session")
+        logging.error("[ERROR] Failed to initialize client or session")
         return
 
     try:
         alert = get_alert_by_identifier(client, alert_id)
         if alert and 'alert' in alert and 'attributes' in alert['alert']:
-            # Find and update the specific attribute
             attribute_found = False
             for attr in alert['alert']['attributes']:
-                if attr['identifier'] == 'Mispar_divuah':  # Note: case-sensitive match
-                    attr['value'] = '241098'  # Update the 'value' field, not the entire attributes list
+                if attr['identifier'] == 'status_divuah':
+                    attr['value'] = 'DONE'
                     attribute_found = True
-                    print(f"[INFO] Updated Mispar_divuah to: {attr['value']}")
+                    logging.info('Updated status_divuah to: %s', attr['value'])
                     break
-            
+
             if not attribute_found:
-                print("[WARNING] Attribute 'Mispar_divuah' not found in alert")
+                logging.warning("Attribute 'status_divuah' not found in alert")
         else:
-            print("[ERROR] Alert or attributes not found.")
+            logging.error("Alert or attributes not found.")
             return
-        
-        # Prepare updated alert data
-        updated_alert_data = prepare_updated_alert_data(alert)
-        
-        # Update the alert
-        update_response = update_alert(client, alert_id, updated_alert_data)
+
+        update_response = update_alert(client, alert_id, alert['alert'])
         if update_response and update_response.alertResult:
-            print('[SUCCESS] Alert updated')
+            logging.info('Alert updated successfully')
         else:
-            print('[ERROR] Alert update failed')
+            logging.error('Alert update failed')
     except Exception as e:
-        print('[ERROR] An error occurred:', e)
+        logging.error('An error occurred: %s', e)
     finally:
-        session.close()  # Ensure session is closed in all cases
-        print("[INFO] Session closed")
+        session.close()
+        logging.info("Session closed")
+
 
 if __name__ == "__main__":
-  main()
+    main()
 
 
+'''
 
 
-
-
+'''

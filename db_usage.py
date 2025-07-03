@@ -32,7 +32,7 @@ def establish_sql_connection():
     except Exception as e:
         logging.error(f"Failed to connect to SQL Server: {e}")
         return None
-    
+
 
 def update_db(connection, reports):
     """
@@ -57,36 +57,39 @@ def update_db(connection, reports):
                 mispar_tkina = report_data["FinalResponse"].get("ReportInstanceReference", "")
                 received_date = report_data['FirstResponse']['ReportDate']
                 comments = report_data["FinalResponse"].get("ReportInstanceStatusReason", "")
-
+                '''
+                # Option to update the alert directly from the DB
                 cursor.execute(
-                    "update alerts set p17 = ? ,  p18 = ? where alert_id = ?", 
-                    (status_divuah, mispar_tkina, alert_id)
+                    "update alerts set p17 = ? ,  p18 = ? where alert_id = ?",
+                    (status_divuah, mispar_tkina, alert_id),
                 )
-                connection.commit()
-
+                connection.commit()                
+                '''
+                # Insert or update the IMP_REPORT_LOG table
                 cursor.execute(
                     "INSERT INTO IMP_REPORT_LOG (report_id, alert_id, status, comments, received_date, mispar_tkina, status_divuah) VALUES (?, ?, ?, ?, ?, ?, ?)",
                     (report_id, alert_id, status_divuah, comments, received_date, mispar_tkina, status_divuah)
                 )
                 connection.commit()
-
+                
+                # Update the IMP_REPORT_STATUS_TRACKING table
                 cursor.execute(
                     "UPDATE IMP_REPORT_STATUS_TRACKING SET Update_date = ?, Status = ?, Comments= ? where Report_id = ? and alert_id = ?",
                     (received_date, 'valid', status_divuah, report_id, alert_id)
                 )
                 connection.commit()
 
-                summary_lines.append(
-                    f"Report {report_id}: alert {alert_id} updated (status_divuah: {status_divuah}, mispar_tkina: {mispar_tkina})"
-                )
+                summary_lines.append({
+                    "report_id": report_id,
+                    "alert_id": alert_id,
+                    "status_divuah": status_divuah,
+                    "mispar_tkina": mispar_tkina
+                })
             else:
-                summary_lines.append(
-                    f"Report {report_number}: No matching alert_id found, no update performed."
-                )
+                logging.error(f"Alert ID {alert_id} not found for report {report_number}.")
 
     except Exception as e:
         logging.error(f"Error updating database: {e}")
         summary_lines.append(f"Error updating database: {e}")
 
-    return "\n".join(summary_lines), alert_id
-            
+    return "\n".join(summary_lines)
