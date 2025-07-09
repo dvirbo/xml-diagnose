@@ -1,95 +1,193 @@
 import pyodbc
 import logging
+from typing import Dict, List, Tuple, Optional
+from dataclasses import dataclass
+from sql.config import SQL_QUERIES, DB_SETTINGS, FIELD_MAPPINGS
 
+@dataclass
+class ReportUpdate:
+    report_id: str
+    alert_id: str
+    status_divuah: str
+    mispar_tkina: str
+    received_date: str
+    comments: str
 
-server = 'IFS-LAB-2025'  
-database = 'master'  
-username = 'sa'  
-password = 'Mat1234!'  
-
-def establish_sql_connection():
-    """
-    Establishes a connection to a SQL Server database using the provided connection parameters.
-    Returns:
-        connection (pyodbc.Connection or None): A connection object if successful, otherwise None.
-    Logs:
-        - Info message on successful connection.
-        - Error message if connection fails.
-    Raises:
-        Does not raise exceptions; logs errors and returns None on failure.
-    Note:
-        The variables 'server', 'database', 'username', and 'password' must be defined in the scope where this function is called.
-    """
-
-    try:
-        connection_string = (
-            f'DRIVER={{ODBC Driver 17 for SQL Server}};'
-            f'SERVER={server};DATABASE={database};UID={username};PWD={password}'
-        )
-        connection = pyodbc.connect(connection_string)
-        logging.info("Connection to SQL Server established successfully.")
-        return connection
-    except Exception as e:
-        logging.error(f"Failed to connect to SQL Server: {e}")
-        return None
-
-
-def update_db(connection, reports):
-    """
-    Updates the database with the provided reports.
-    Returns:
-        summary (str): A short text summary of the updates made.
-    """
-    cursor = connection.cursor()
-    summary_lines = []
-    try:
-        for report_number, report_data in reports.items():
-            alert_id = report_data['FirstResponse']['ReportInstanceReference']
-            cursor.execute(
-                "SELECT report_id, alert_id FROM IMP_REPORT_LOG WHERE report_id = ?", (report_number,)
+class DatabaseUpdater:
+    def __init__(self, connection: pyodbc.Connection):
+        self.connection = connection
+        self.cursor = connection.cursor()
+        
+    def _extract_report_data(self, report_data: Dict) -> Optional[ReportUpdate]:
+        """Extract and validate report data."""
+        try:
+            first_response = report_data.get('FirstResponse', {})
+            final_response = report_data.get('FinalResponse', {})
+            
+            return ReportUpdate(
+                report_id=None,  # Will be set later
+                alert_id=first_response.get(FIELD_MAPPINGS['ALERT_ID'], ''),
+                status_divuah=final_response.get(FIELD_MAPPINGS['STATUS_DIVUAH'], ''),
+                mispar_tkina=final_response.get(FIELD_MAPPINGS['MISPAR_TKINA'], ''),
+                received_date=first_response.get(FIELD_MAPPINGS['RECEIVED_DATE'], ''),
+                comments=final_response.get(FIELD_MAPPINGS['COMMENTS'], '')
             )
-            row = cursor.fetchone()
-            report_id = row[0] if row else None
-            alert_id = row[1] if row else None
-
-            if alert_id:
-                status_divuah = report_data["FinalResponse"].get("ReportInstanceLegalStatusDesc", "")
-                mispar_tkina = report_data["FinalResponse"].get("ReportInstanceReference", "")
-                received_date = report_data['FirstResponse']['ReportDate']
-                comments = report_data["FinalResponse"].get("ReportInstanceStatusReason", "")
-                '''
-                # Option to update the alert directly from the DB
-                cursor.execute(
-                    "update alerts set p17 = ? ,  p18 = ? where alert_id = ?",
-                    (status_divuah, mispar_tkina, alert_id),
-                )
-                connection.commit()                
-                '''
-                # Insert or update the IMP_REPORT_LOG table
-                cursor.execute(
-                    "INSERT INTO IMP_REPORT_LOG (report_id, alert_id, status, comments, received_date, mispar_tkina, status_divuah) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (report_id, alert_id, status_divuah, comments, received_date, mispar_tkina, status_divuah)
-                )
-                connection.commit()
+        except Exception as e:
+            logging.error(f"Error extracting report data: {e}")
+            return None
+    
+    def _get_existing_report_info(self, report_number: str) -> Tuple[Optional[str], Optional[str]]:
+        """Get existing report and alert ID from database."""
+        try:
+            self.cursor.execute(SQL_QUERIES['SELECT_REPORT'], (report_number,))
+            row = self.cursor.fetchone()
+            return (row[0], row[1]) if row else (None, None)
+        except Exception as e:
+            logging.error(f"Error fetching report info for {report_number}: {e}")
+            return (None, None)
+    
+    def _bulk_insert_report_logs(self, updates: List[ReportUpdate]) -> int:
+        """Bulk insert report logs."""
+        try:
+            data = [
+                (update.report_id, update.alert_id, update.status_divuah, 
+                 update.comments, update.received_date, update.mispar_tkina, update.status_divuah)
+                for update in updates
+            ]
+            
+            self.cursor.executemany(SQL_QUERIES['INSERT_REPORT_LOG'], data)
+            return len(data)
+        except Exception as e:
+            logging.error(f"Error in bulk insert report logs: {e}")
+            raise
+    
+    def _bulk_update_status_tracking(self, updates: List[ReportUpdate]) -> int:
+        """Bulk update status tracking."""
+        try:
+            data = [
+                (update.received_date, DB_SETTINGS['DEFAULT_STATUS'], 
+                 update.status_divuah, update.report_id, update.alert_id)
+                for update in updates
+            ]
+            
+            self.cursor.executemany(SQL_QUERIES['UPDATE_STATUS_TRACKING'], data)
+            return len(data)
+        except Exception as e:
+            logging.error(f"Error in bulk update status tracking: {e}")
+            raise
+    
+    def update_database_bulk(self, reports: Dict) -> Dict:
+        """
+        Updates the database with the provided reports using bulk operations.
+        
+        Args:
+            reports: Dictionary of report data
+            
+        Returns:
+            Dict containing summary of updates and any errors
+        """
+        summary = {
+            'successful_updates': [],
+            'failed_updates': [],
+            'total_processed': 0,
+            'total_successful': 0,
+            'total_failed': 0
+        }
+        
+        valid_updates = []
+        
+        try:
+            # Process and validate all reports
+            for report_number, report_data in reports.items():
+                summary['total_processed'] += 1
                 
-                # Update the IMP_REPORT_STATUS_TRACKING table
-                cursor.execute(
-                    "UPDATE IMP_REPORT_STATUS_TRACKING SET Update_date = ?, Status = ?, Comments= ? where Report_id = ? and alert_id = ?",
-                    (received_date, 'valid', status_divuah, report_id, alert_id)
-                )
-                connection.commit()
-
-                summary_lines.append({
-                    "report_id": report_id,
-                    "alert_id": alert_id,
-                    "status_divuah": status_divuah,
-                    "mispar_tkina": mispar_tkina
+                # Extract report data
+                update_data = self._extract_report_data(report_data)
+                if not update_data:
+                    summary['failed_updates'].append({
+                        'report_number': report_number,
+                        'error': 'Failed to extract report data'
+                    })
+                    continue
+                
+                # Get existing report info
+                report_id, alert_id = self._get_existing_report_info(report_number)
+                
+                if not alert_id:
+                    summary['failed_updates'].append({
+                        'report_number': report_number,
+                        'error': f'Alert ID not found for report {report_number}'
+                    })
+                    continue
+                
+                # Set the report_id and validate alert_id
+                update_data.report_id = report_id
+                update_data.alert_id = alert_id
+                
+                valid_updates.append(update_data)
+                summary['successful_updates'].append({
+                    'report_number': report_number,
+                    'report_id': report_id,
+                    'alert_id': alert_id,
+                    'status_divuah': update_data.status_divuah,
+                    'mispar_tkina': update_data.mispar_tkina
                 })
-            else:
-                logging.error(f"Alert ID {alert_id} not found for report {report_number}.")
+            
+            # Perform bulk operations
+            if valid_updates:
+                # Process in batches
+                batch_size = DB_SETTINGS['BATCH_SIZE']
+                for i in range(0, len(valid_updates), batch_size):
+                    batch = valid_updates[i:i + batch_size]
+                    
+                    # Bulk insert report logs
+                    self._bulk_insert_report_logs(batch)
+                    
+                    # Bulk update status tracking
+                    self._bulk_update_status_tracking(batch)
+                    
+                    # Commit batch
+                    self.connection.commit()
+                    
+                    logging.info(f"Processed batch {i//batch_size + 1}: {len(batch)} records")
+            
+            summary['total_successful'] = len(valid_updates)
+            summary['total_failed'] = summary['total_processed'] - summary['total_successful']
+            
+            logging.info(f"Database update completed: {summary['total_successful']}/{summary['total_processed']} successful")
+            
+        except Exception as e:
+            self.connection.rollback()
+            logging.error(f"Error in bulk database update: {e}")
+            summary['failed_updates'].append({
+                'error': f'Bulk operation failed: {e}'
+            })
+        
+        return summary
 
-    except Exception as e:
-        logging.error(f"Error updating database: {e}")
-        summary_lines.append(f"Error updating database: {e}")
-
-    return "\n".join(summary_lines)
+def update_db(connection: pyodbc.Connection, reports: Dict) -> str:
+    """
+    Updates the database with the provided reports using bulk operations.
+    
+    Args:
+        connection: Database connection
+        reports: Dictionary of report data
+        
+    Returns:
+        str: Summary of the updates made
+    """
+    updater = DatabaseUpdater(connection)
+    summary = updater.update_database_bulk(reports)
+    
+    # Format summary as string
+    result = f"Database Update Summary:\n"
+    result += f"Total Processed: {summary['total_processed']}\n"
+    result += f"Successful: {summary['total_successful']}\n"
+    result += f"Failed: {summary['total_failed']}\n"
+    
+    if summary['failed_updates']:
+        result += "\nFailed Updates:\n"
+        for failed in summary['failed_updates']:
+            result += f"  - {failed}\n"
+    
+    return result

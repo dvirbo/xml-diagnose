@@ -1,9 +1,9 @@
 import os
 import logging
-from db_usage import update_db,establish_sql_connection
+from db_usage import update_db
+from establish_db import connect_to_database
 from report_xml_classifier_v2 import classify_reports_by_status, export_reports_to_csv, parse_xml_files
 from update_alert_rest import process_alert
-from soap.update_alert_soap import ActOne_login_and_get_session, add_notes_request
 from login_and_get_session import login_and_get_session
 
 logging.basicConfig(level=logging.INFO)
@@ -18,16 +18,15 @@ def main(directory: str) -> None:
     logging.info(f"Error reports saved to: {error_csv}")
     logging.info(f"Valid reports saved to: {valid_csv}")
     summary_report = []
-    alert_id = None
    # Establish a database connection
-    connection = establish_sql_connection()
+    connection = connect_to_database()
     if connection:
         logging.info("Database connection established successfully.")
         # Here you can add code to interact with the database if needed
         if valid_reports:
-           summary_report, alert_id = update_db(connection, valid_reports)
+           summary_report = update_db(connection, valid_reports)
         if error_reports:
-           summary_report, alert_id = update_db(connection, error_reports)
+           summary_report = update_db(connection, error_reports)
     else:
         logging.error("Failed to establish database connection.")
     connection.close()
@@ -53,10 +52,6 @@ def main(directory: str) -> None:
             logging.error(f"Failed to update alert for report: {report}")
             
         
-
-    
-    
-
 
 if __name__ == "__main__":
     INPUT_DIR = "C:\\Users\\dvirbo\\Desktop\\mizrahi\\documents_20250527"
