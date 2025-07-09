@@ -2,7 +2,9 @@ import os
 import logging
 from db_usage import update_db,establish_sql_connection
 from report_xml_classifier_v2 import classify_reports_by_status, export_reports_to_csv, parse_xml_files
-from update_alert_soap import ActOne_login_and_get_session, add_notes_request
+from update_alert_rest import process_alert
+from soap.update_alert_soap import ActOne_login_and_get_session, add_notes_request
+from login_and_get_session import login_and_get_session
 
 logging.basicConfig(level=logging.INFO)
 
@@ -29,14 +31,28 @@ def main(directory: str) -> None:
     else:
         logging.error("Failed to establish database connection.")
     connection.close()
+    
+    '''
+    summery report contains:
+    "report_id": report_id, (ie Mispar_divuah)
+    "alert_id": alert_id,
+    "status_divuah": status_divuah,
+    "mispar_tkina": mispar_tkina
+    '''
+    #Update the alert in ActOne service with the new values
 
-    client, session = ActOne_login_and_get_session()
+    session = login_and_get_session()
 
-    response  = add_notes_request(client, alert_id, summary_report, is_confidential=False)
-    logging.info(f"Notes added to alert {alert_id}: {response}")
-    # Close the session after all operations are done
-    session.close()
-    # send a summery reprt via addNotes service under 'alertsService'
+    if not session:
+        logging.error("Failed to create or validate session")
+        return  
+    
+    for report in summary_report:
+        update_status = process_alert(session, report)
+        if not update_status:
+            logging.error(f"Failed to update alert for report: {report}")
+            
+        
 
     
     
@@ -58,6 +74,11 @@ if __name__ == "__main__":
     step 8: add_notes_request to the alert with the summary report
     step 9: # TODO send the error reports via email to the relevant recipients
 
+
+    notes:
+    when we got an error while tring to open a new client (like timeout), run this:
+    #   Update certificates via pip
+        pip install --upgrade certifi 
     
     '''
     

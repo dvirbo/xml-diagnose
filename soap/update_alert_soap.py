@@ -27,18 +27,7 @@ def login_and_get_session(login_url, login_data):
             print('[ERROR] Login failed:', login_response.text)
             session.close()
             return None
-
-        # Optional: If your login response returns a token
-        token = None
-        if login_response.headers.get('Content-Type', '').startswith('application/json'):
-            try:
-                token = login_response.json().get('token')
-            except Exception as e:
-                print('[ERROR] Failed to parse login response as JSON:', e)
-        if token:
-            session.headers.update({'Authorization': f'Bearer {token}'})
-
-        print('[INFO] Logged in successfully')
+        logging.info('[INFO] Logged in successfully')
         return session
     except Exception as e:
         print('[ERROR] Login failed:', e)
@@ -97,12 +86,12 @@ def validate_session(session):
 
 
 def ActOne_login_and_get_session():
-    login_url = 'http://localhost:8080/ActOne/api/public/v1/auth/login'
+    login_url = 'http://ifs-lab-2025:8080/ActOne/api/public/v1/auth/login'
     login_data = {
         'username': 'admin',
         'password': 'password'
     }
-    wsdl_url = 'http://localhost:8080/ActOne/services/alertsService?wsdl'
+    wsdl_url = 'http://ifs-lab-2025:8080/ActOne/services/alertsService?wsdl'
 
     session = login_and_get_session(login_url, login_data)
     if not session or not validate_session(session):
@@ -136,7 +125,21 @@ def save_alert_data_to_file(alert_data, filename='alert_data.xml'):
 
 
 def main():
-    alert_id = 'SAM1-2201'
+    """
+    Main function to update the status of a specific alert in the system.
+    This function performs the following steps:
+    1. Logs in to the ActOne system and initializes a client and session.
+    2. Retrieves an alert by its identifier.
+    3. Searches for the attribute 'status_divuah' within the alert's attributes.
+        - If found, updates its value to 'DONE'.
+        - If not found, logs a warning.
+    4. Updates the alert in the system with the modified attributes.
+    5. Handles errors and exceptions during the process.
+    6. Ensures the session is closed after execution.
+    Returns:
+         None
+    """
+    alert_id = 'SAM1-2206'
     client, session = ActOne_login_and_get_session()
     if not client or not session:
         logging.error("[ERROR] Failed to initialize client or session")
@@ -169,13 +172,41 @@ def main():
     finally:
         session.close()
         logging.info("Session closed")
-
+        
+def rest_test():
+    login_url = 'http://ifs-lab-2025:8080/ActOne/api/public/v1/auth/login'
+    login_data = {
+        'username': 'admin',
+        'password': 'password'
+    }
+    session = login_and_get_session(login_url, login_data)
+    if not session or not validate_session(session):
+        print('[ERROR] Failed to create or validate session')
+        return None
+    
+    
+    url = 'http://ifs-lab-2025:8080/ActOne/api/v1/work-items/SAM1-2205'
+    try:
+        # Use the authenticated session directly (no second login)
+        response = session.get(url)
+        if response.status_code != 200:
+            print(f'[ERROR] Request failed with status {response.status_code}:', response.text)
+            return None
+        print('[SUCCESS] REST API call successful')
+        alert = response.json()
+        
+        
+        
+    except Exception as e:
+        print('[ERROR] An error occurred during the request:', e)
+        return None
+    finally:
+        session.close()
 
 if __name__ == "__main__":
-    main()
+    #main()
+    
+    rest_test()
+    
 
 
-'''
-
-
-'''

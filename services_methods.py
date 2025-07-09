@@ -1,6 +1,6 @@
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 def update_alert(client, identifier, updated_alert_data):
     """Update the alert using the SOAP service."""
