@@ -2,7 +2,7 @@ import pyodbc
 import logging
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
-from sql.config import SQL_QUERIES, DB_SETTINGS, FIELD_MAPPINGS
+from config import SQL_QUERIES, DB_SETTINGS, FIELD_MAPPINGS
 
 @dataclass
 class ReportUpdate:

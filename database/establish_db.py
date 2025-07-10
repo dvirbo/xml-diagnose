@@ -1,5 +1,5 @@
 import pyodbc
-from sql.config import DB_CONFIG, CONNECTION_STRING_TEMPLATE
+from config import DB_CONFIG, CONNECTION_STRING_TEMPLATE
 
 '''
 try:

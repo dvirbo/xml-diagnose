@@ -1,8 +1,16 @@
-from datetime import datetime
 import os
 import csv
+import logging
+from datetime import datetime
+from typing import Dict, Tuple, Any, List
 import xml.etree.ElementTree as ET
-from typing import Dict, List, Tuple
+
+# Constants
+FIRST_RESPONSE_TAG = "FirstResponse"
+FINAL_RESPONSE_TAG = "FinalResponse"
+LEGAL_STATUS_OK = "תקין"
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
 def parse_xml_files(directory: str) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
@@ -24,26 +32,26 @@ def parse_xml_files(directory: str) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
     """
     if not os.path.exists(directory):
         raise FileNotFoundError(f"Directory not found: {directory}")
-    
-    first_responses = {}
-    final_responses = {}
+
+    first_responses: Dict[str, Any] = {}
+    final_responses: Dict[str, Any] = {}
 
     for filename in os.listdir(directory):
         if not filename.upper().endswith(".XML"):
             continue
-            
+
         file_path = os.path.join(directory, filename)
-        
+
         try:
             tree = ET.parse(file_path)
             root = tree.getroot()
         except ET.ParseError as e:
-            print(f"Warning: Could not parse {filename}: {e}")
+            logging.warning(f"Could not parse {filename}: {e}")
             continue
 
-        if root.tag == "FirstResponse":
+        if root.tag == FIRST_RESPONSE_TAG:
             report_number = _safe_get_text(root, "ReportNumber")
-            if report_number:  # Only process if we have a valid report number
+            if report_number:
                 first_responses[report_number] = {
                     "ReportDate": _safe_get_text(root, "ReportDate"),
                     "ReportInstanceReference": _safe_get_text(root, "ReportInstanceReference"),
@@ -51,17 +59,11 @@ def parse_xml_files(directory: str) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
                     "ReportInstanceStatusReason": _safe_get_text(root, "ReportInstanceStatusReason")
                 }
 
-        elif root.tag == "FinalResponse":
+        elif root.tag == FINAL_RESPONSE_TAG:
             report_number = _safe_get_text(root, "ReportMetaData/ReportNumber")
-            if report_number:  # Only process if we have a valid report number
+            if report_number:
                 legal_status = _safe_get_text(root, "ReportMetaData/ReportInstanceLegalStatusDesc")
-                
-                # Set status reason based on legal status
-                if legal_status == "תקין":
-                    status_reason = ""
-                else:
-                    status_reason = _safe_get_text(root, "ReportMetaData/ReportInstanceStatusReason")
-                
+                status_reason = "" if legal_status == LEGAL_STATUS_OK else _safe_get_text(root, "ReportMetaData/ReportInstanceStatusReason")
                 final_responses[report_number] = {
                     "ReportInstanceReference": _safe_get_text(root, "ReportMetaData/ReportInstanceReference"),
                     "ReportInstanceLegalStatusDesc": legal_status,
@@ -101,29 +103,22 @@ def classify_reports_by_status(first_responses: Dict[str, Dict],
             - valid_reports: Reports with final status == "תקין"
             Each entry contains combined first and final response data.
     """
-    error_reports = {}
-    valid_reports = {}
+    error_reports: Dict[str, Any] = {}
+    valid_reports: Dict[str, Any] = {}
 
-    # Process all reports that have final responses (this is the key classification criterion)
     for report_number, final_data in final_responses.items():
         first_data = first_responses.get(report_number)
-        
-        # Create combined data structure
         combined_data = {
             "ReportNumber": report_number,
             "FinalResponse": final_data,
             "FirstResponse": first_data  # May be None if no matching first response
         }
-
-        # Classify based on final legal status
         final_status = final_data.get("ReportInstanceLegalStatusDesc", "")
-        
-        if final_status == "תקין":
+        if final_status == LEGAL_STATUS_OK:
             valid_reports[report_number] = combined_data
         else:
             error_reports[report_number] = combined_data
 
-    return error_reports, valid_reports
 
 
 def export_reports_to_csv(error_reports: Dict[str, Dict], 
@@ -183,27 +178,26 @@ def _write_reports_to_csv(reports: Dict[str, Dict], csv_path: str, headers: List
         csv_path: Path where the CSV file will be created
         headers: List of column headers for the CSV
     """
-    with open(csv_path, 'w', newline='', encoding='utf-8') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=headers)
-        writer.writeheader()
-        
-        for report_number, report_data in reports.items():
-            first_response = report_data.get("FirstResponse", {}) or {}
-            final_response = report_data.get("FinalResponse", {}) or {}
-            
-            row = {
-                "ReportNumber": report_number,
-                "ReportDate": first_response.get("ReportDate", ""),
-                "FirstResponse_Reference": first_response.get("ReportInstanceReference", ""),
-                "FirstResponse_LegalStatus": first_response.get("ReportInstanceLegalStatusDesc", ""),
-                "FirstResponse_StatusReason": first_response.get("ReportInstanceStatusReason", ""),
-                "FinalResponse_Reference": final_response.get("ReportInstanceReference", ""),
-                "FinalResponse_LegalStatus": final_response.get("ReportInstanceLegalStatusDesc", ""),
-                "FinalResponse_StatusReason": final_response.get("ReportInstanceStatusReason", ""),
-                "HasFirstResponse": "Yes" if first_response else "No",
-                "HasFinalResponse": "Yes" if final_response else "No"
-            }
-            
-            writer.writerow(row)
-
+    try:
+        with open(csv_path, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=headers)
+            writer.writeheader()
+            for report_number, report_data in reports.items():
+                first_response = report_data.get("FirstResponse", {}) or {}
+                final_response = report_data.get("FinalResponse", {}) or {}
+                row = {
+                    "ReportNumber": report_number,
+                    "ReportDate": first_response.get("ReportDate", ""),
+                    "FirstResponse_Reference": first_response.get("ReportInstanceReference", ""),
+                    "FirstResponse_LegalStatus": first_response.get("ReportInstanceLegalStatusDesc", ""),
+                    "FirstResponse_StatusReason": first_response.get("ReportInstanceStatusReason", ""),
+                    "FinalResponse_Reference": final_response.get("ReportInstanceReference", ""),
+                    "FinalResponse_LegalStatus": final_response.get("ReportInstanceLegalStatusDesc", ""),
+                    "FinalResponse_StatusReason": final_response.get("ReportInstanceStatusReason", ""),
+                    "HasFirstResponse": "Yes" if first_response else "No",
+                    "HasFinalResponse": "Yes" if final_response else "No"
+                }
+                writer.writerow(row)
+    except OSError as e:
+        logging.error(f"Failed to write CSV file {csv_path}: {e}")
 

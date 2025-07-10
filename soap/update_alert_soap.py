@@ -2,7 +2,7 @@ import requests
 import requests_cache
 from zeep import Client, Settings
 from zeep.transports import Transport
-from services_methods import update_alert
+from soap.services_methods import update_alert
 from zeep.plugins import HistoryPlugin
 import logging
 
