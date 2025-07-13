@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><FirstResponse DocumentReference="0001001">
+  <ReportFileName>FirstResponse_2</ReportFileName>
+  <ReportNumber>052376</ReportNumber>
+  <ReportDate>2025-07-13</ReportDate>
+  <ReportInstanceDate>2025-07-13T11:48:17</ReportInstanceDate>
+  <ReportInstanceReference>0001001</ReportInstanceReference>
+  <IsStructuredReport>true</IsStructuredReport>
+  <ReportInstanceStatusId></ReportInstanceStatusId>
+  <ReportInstanceLegalStatusId></ReportInstanceLegalStatusId>
+  <ReportInstanceLegalStatusDesc>הדיווח נחסם: חסר מידע נוסף</ReportInstanceLegalStatusDesc>
+  <ReportInstanceStatusReason>חסר מידע נוסף לגבי הדיווח</ReportInstanceStatusReason>
+</FirstResponse>
