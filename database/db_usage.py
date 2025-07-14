@@ -2,7 +2,7 @@ import pyodbc
 import logging
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
-from config import SQL_QUERIES, DB_SETTINGS, FIELD_MAPPINGS
+from database.config import SQL_QUERIES, DB_SETTINGS, FIELD_MAPPINGS
 
 @dataclass
 class ReportUpdate:
@@ -65,7 +65,7 @@ class DatabaseUpdater:
         """Bulk update status tracking."""
         try:
             data = [
-                (update.received_date, DB_SETTINGS['DEFAULT_STATUS'], 
+                (update.received_date, DB_SETTINGS['DEFAULT_STATUS'],  #TODO: change the default status
                  update.status_divuah, update.report_id, update.alert_id)
                 for update in updates
             ]
@@ -163,7 +163,7 @@ class DatabaseUpdater:
                 'error': f'Bulk operation failed: {e}'
             })
         
-        return summary
+        return summary['successful_updates']
 
 def update_db(connection: pyodbc.Connection, reports: Dict) -> str:
     """
@@ -179,15 +179,4 @@ def update_db(connection: pyodbc.Connection, reports: Dict) -> str:
     updater = DatabaseUpdater(connection)
     summary = updater.update_database_bulk(reports)
     
-    # Format summary as string
-    result = f"Database Update Summary:\n"
-    result += f"Total Processed: {summary['total_processed']}\n"
-    result += f"Successful: {summary['total_successful']}\n"
-    result += f"Failed: {summary['total_failed']}\n"
-    
-    if summary['failed_updates']:
-        result += "\nFailed Updates:\n"
-        for failed in summary['failed_updates']:
-            result += f"  - {failed}\n"
-    
-    return result
+    return summary

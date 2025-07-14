@@ -1,7 +1,8 @@
 import logging
 import requests
 from typing import Dict, List, Any, Tuple
-from login_and_get_session import login_and_get_session
+
+from api import login_and_get_session
 
 logging.basicConfig(level=logging.INFO)
 

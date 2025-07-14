@@ -2,9 +2,9 @@
 DB_CONFIG = {
     'DRIVER': '{ODBC Driver 17 for SQL Server}',
     'SERVER': 'ifs-lab-2025',
-    'DATABASE': 'master',
+    'DATABASE': 'actone',
     'USERNAME': 'sa',
-    'PASSWORD': 'Mat1234!'
+    'PASSWORD': ''
 }
 
 # Connection string template
@@ -20,7 +20,7 @@ CONNECTION_STRING_TEMPLATE = (
 SQL_QUERIES = {
     'SELECT_REPORT': """
         SELECT report_id, alert_id 
-        FROM IMP_REPORT_LOG 
+        FROM [IMP_REPORT_LOG]
         WHERE report_id = ?
     """,
     

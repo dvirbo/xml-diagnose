@@ -14,6 +14,8 @@ class ProcessingResult:
     error_csv: Optional[str] = None
     valid_csv: Optional[str] = None
     summary_report: List[Dict] = None
+    error_reports: List[Dict] = None
+    valid_reports: List[Dict] = None
 
 
 class XMLDiagnosePipeline:
@@ -31,16 +33,16 @@ class XMLDiagnosePipeline:
         
         try:
             # Step 1: Process XML files
-            error_reports, valid_reports = self.xml_processor.process_xml_files()
+            result.error_reports, result.valid_reports = self.xml_processor.process_xml_files()
             
             # Step 2: Export reports to CSV
             result.error_csv, result.valid_csv = self.xml_processor.export_reports(
-                error_reports, valid_reports
+                result.error_reports, result.valid_reports
             )
             
             # Step 3: Update database
             if self.db_manager.connect():
-                result.summary_report = self.db_manager.update_reports(valid_reports, error_reports)
+                result.summary_report = self.db_manager.update_reports(result.valid_reports, result.error_reports)
             else:
                 logging.error("Skipping database update due to connection failure")
                 return result

@@ -2,7 +2,17 @@ import logging
 
 from processors.xml_diagnose import XMLDiagnosePipeline
 
-logging.basicConfig(level=logging.INFO)
+
+
+# Remove all handlers associated with the root logger
+for handler in logging.root.handlers[:]:
+    logging.root.removeHandler(handler)
+
+logging.basicConfig(
+    filename = 'logs/mizrahi.txt',
+    filemode='a',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s')
 
 def main(directory: str) -> None:
     """Main entry point"""
@@ -15,7 +25,7 @@ def main(directory: str) -> None:
 
 
 if __name__ == "__main__":
-    INPUT_DIR = "C:\\Users\\dvirbo\\Desktop\\mizrahi\\documents_20250527"
+    INPUT_DIR = "reports"
     main(INPUT_DIR)
+
     
-    #TODO: Add dummy data into the DB to test the pipeline

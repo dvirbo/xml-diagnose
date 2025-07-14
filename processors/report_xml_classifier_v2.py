@@ -118,6 +118,9 @@ def classify_reports_by_status(first_responses: Dict[str, Dict],
             valid_reports[report_number] = combined_data
         else:
             error_reports[report_number] = combined_data
+            
+    return error_reports, valid_reports
+    
 
 
 

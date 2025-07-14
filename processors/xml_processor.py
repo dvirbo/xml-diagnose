@@ -1,9 +1,7 @@
 import os
 import logging
 from typing import List, Tuple
-from report_xml_classifier_v2 import classify_reports_by_status, export_reports_to_csv, parse_xml_files
-
-
+from processors.report_xml_classifier_v2 import parse_xml_files,classify_reports_by_status,export_reports_to_csv
 
 class XMLReportProcessor:
     """Handles XML report parsing and classification"""
@@ -17,9 +15,16 @@ class XMLReportProcessor:
         logging.info("Starting XML file processing...")
         
         first_responses, final_responses = parse_xml_files(self.directory)
+        
+        # Add debugging logs
+        logging.info(f"Parsed {len(first_responses) if first_responses else 0} first responses")
+        logging.info(f"Parsed {len(final_responses) if final_responses else 0} final responses")
+        
+        # Handle potential None return from classify_reports_by_status
         error_reports, valid_reports = classify_reports_by_status(first_responses, final_responses)
         
-        logging.info(f"Found {len(error_reports)} error reports and {len(valid_reports)} valid reports")
+        logging.info(f"Classification complete: {len(error_reports)} errors, {len(valid_reports)} valid")
+        
         return error_reports, valid_reports
     
     def export_reports(self, error_reports: List, valid_reports: List) -> Tuple[str, str]:
