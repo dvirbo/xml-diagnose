@@ -2,8 +2,6 @@ import logging
 
 from processors.xml_diagnose import XMLDiagnosePipeline
 
-
-
 # Remove all handlers associated with the root logger
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
@@ -12,10 +10,13 @@ logging.basicConfig(
     filename = 'logs/mizrahi.txt',
     filemode='a',
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s')
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    encoding='utf-8'
+    )
 
 def main(directory: str) -> None:
     """Main entry point"""
+    logging.info(f"******************** new process ********************")
     logging.info(f"Starting XML diagnosis pipeline for directory: {directory}")
     
     pipeline = XMLDiagnosePipeline(directory)
@@ -27,5 +28,9 @@ def main(directory: str) -> None:
 if __name__ == "__main__":
     INPUT_DIR = "reports"
     main(INPUT_DIR)
+
+
+    
+    
 
     

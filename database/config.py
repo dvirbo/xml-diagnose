@@ -46,7 +46,6 @@ SQL_QUERIES = {
 # Database settings
 DB_SETTINGS = {
     'BATCH_SIZE': 1000,
-    'DEFAULT_STATUS': 'valid',
     'TIMEOUT': 30
 }
 

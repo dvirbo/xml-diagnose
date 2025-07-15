@@ -7,17 +7,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from database.config import DB_CONFIG, CONNECTION_STRING_TEMPLATE
 from secure_password_store.password_manager import PasswordManager
 
-'''
-try:
-    connection_string = (
-        f'DRIVER={{ODBC Driver 17 for SQL Server}};'
-        f'SERVER={server};DATABASE={database};UID={username};PWD={password}'
-    )
-    connection = pyodbc.connect(connection_string)
-    logging.info("Connection to SQL Server established successfully.")
-    return connection
-'''
-
 def get_connection_string():
     """Generate connection string from configuration."""
     return CONNECTION_STRING_TEMPLATE.format(**DB_CONFIG) 
