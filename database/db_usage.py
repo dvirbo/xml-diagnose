@@ -65,8 +65,8 @@ class DatabaseUpdater:
         """Bulk update status tracking."""
         try:
             data = [
-                (update.received_date, DB_SETTINGS['DEFAULT_STATUS'],  #TODO: change the default status
-                 update.status_divuah, update.report_id, update.alert_id)
+                (update.received_date, update.status_divuah, 
+                 update.comments, update.report_id, update.alert_id)
                 for update in updates
             ]
             
