@@ -2,7 +2,6 @@ import requests
 import requests_cache
 from zeep import Client, Settings
 from zeep.transports import Transport
-from soap.services_methods import update_alert
 from zeep.plugins import HistoryPlugin
 import logging
 
@@ -162,11 +161,11 @@ def main():
             logging.error("Alert or attributes not found.")
             return
 
-        update_response = update_alert(client, alert_id, alert['alert'])
-        if update_response and update_response.alertResult:
-            logging.info('Alert updated successfully')
-        else:
-            logging.error('Alert update failed')
+        # update_response = update_alert(client, alert_id, alert['alert'])
+        # if update_response and update_response.alertResult:
+        #     logging.info('Alert updated successfully')
+        # else:
+        #     logging.error('Alert update failed')
     except Exception as e:
         logging.error('An error occurred: %s', e)
     finally:
@@ -204,9 +203,9 @@ def rest_test():
         session.close()
 
 if __name__ == "__main__":
-    #main()
+    main()
     
-    rest_test()
+   # rest_test()
     
 
 
