@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 def parse_xml_files(directory: str) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
     """
-    Parses XML files in the specified directory and extracts information from files with root tags
+    Parses XML files in the specified directory and extracts the relevant information from files with root tags
     "FirstResponse" and "FinalResponse".
     
     Args:

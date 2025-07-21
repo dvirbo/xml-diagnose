@@ -38,7 +38,7 @@ class DatabaseUpdater:
     
     def _get_existing_report_info(self, report_number: str) -> Tuple[Optional[str], Optional[str]]:
         """Get existing report and alert ID from database."""
-        try:
+        try: # gets report_id and alert_id from [IMP_REPORT_LOG]
             self.cursor.execute(SQL_QUERIES['SELECT_REPORT'], (report_number,))
             row = self.cursor.fetchone()
             return (row[0], row[1]) if row else (None, None)

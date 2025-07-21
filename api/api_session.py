@@ -43,11 +43,40 @@ def login_and_get_session():
         session.close()
         return None
     
+def end_session(session):
+    """
+    End the current session by logging out and closing the session.
+    
+    Args:
+        session: The requests Session object to end
+        
+    Returns:
+        bool: True if logout was successful, False otherwise
+    """
+    logout_url = 'http://ifs-lab-2025:8080/ActOne/api/v1/auth/logout'
+    
+    try:
+        logout_response = session.post(logout_url)
+        if logout_response.status_code == 200:
+            logging.info('[INFO] Logged out successfully')
+            session.close()
+            return True
+        else:
+            logging.error(f'[ERROR] Logout failed: {logout_response.text}')
+            session.close()
+            return False
+    except Exception as e:
+        logging.error(f'[ERROR] Logout failed: {e}')
+        session.close()
+        return False
+
+   
+    
+        
 if __name__ == "__main__":
     session = login_and_get_session()
     if session:
         print("Session established successfully.")
-        session.close()
+        end_session(session)
     else:
         print("Failed to establish session.")
-    

@@ -2,6 +2,7 @@ import logging
 from typing import List, Dict, Optional
 from dataclasses import dataclass
 from api.alert_updater import AlertUpdater
+from api.api_session import end_session
 from database.db_manager import DatabaseManager
 from processors.xml_processor import XMLReportProcessor
 
@@ -39,6 +40,7 @@ class XMLDiagnosePipeline:
             result.error_csv, result.valid_csv = self.xml_processor.export_reports(
                 result.error_reports, result.valid_reports
             )
+            #TODO: add a method that send the csv to the Rashut via email
             
             # Step 3: Update database
             if self.db_manager.connect():
@@ -62,5 +64,9 @@ class XMLDiagnosePipeline:
         finally:
             # Close database connection
             self.db_manager.close()
+            #close session and logout ActOne
+            end_session(self.alert_updater.session)
+
+            
         
         return result

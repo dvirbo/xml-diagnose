@@ -28,7 +28,7 @@ The main entry point is `main.py`, which manages the entire pipeline through `XM
 - **Classification**: Combine and classify reports by legal status
 - **CSV Export**: Generate timestamped CSV files in the `csv` directory
 - **Database Update**: Store valid and error reports in the database
-- **Alert Updates**: Update external alerts via API
+- **Alert Updates**: Update the relevant alerts in ActOne via Rest API
 
 ### Output
 - Error reports CSV
