@@ -14,3 +14,16 @@ SELECT TOP (1000) [alert_internal_id]
 
 -- select * from
 -- [dbo].[acm_md_alert_statuses]
+
+SELECT *
+from [actone].[dbo].[IMP_REPORT_STATUS_TRACKING]
+
+insert into [actone].[dbo].[IMP_REPORT_LOG]
+    ([Report_id]
+    ,[Alert_id])
+values
+    (0523670, 'SAM1-1782')
+
+        SELECT * 
+        FROM [actone].[dbo].[IMP_REPORT_LOG]
+        WHERE report_id = 0523670

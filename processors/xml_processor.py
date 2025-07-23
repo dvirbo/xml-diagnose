@@ -41,3 +41,4 @@ class XMLReportProcessor:
         logging.info(f"Valid reports saved to: {valid_csv}")
         
         return error_csv, valid_csv
+    

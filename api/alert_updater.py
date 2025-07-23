@@ -1,7 +1,6 @@
 import logging
-from typing import List, Dict
 from api.update_alert_rest import process_alert
-from api.login_and_get_session import login_and_get_session
+from api.api_session import login_and_get_session
 
 class AlertUpdater:
     """Handles alert updates via REST API"""
@@ -28,7 +27,7 @@ class AlertUpdater:
         for report in summary_report:
             update_status = process_alert(self.session, report)
             if update_status:
-                logging.info(f"Successfully updated alert for report: {report['report_number']} with status {report['status_divuah']} and mispar_tkina {report['mispar_tkina']}")
+                logging.info(f"Successfully updated alert for report: {report['report_id']} with status {report['status_divuah']} and mispar_tkina {report['mispar_tkina']}")
             else:
-                logging.error(f"Failed to update alert for report: {report['report_number']}")
+                logging.error(f"Failed to update alert for report: {report['report_id']}")
         

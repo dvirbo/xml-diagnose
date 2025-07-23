@@ -1,6 +1,7 @@
+from datetime import date, datetime
 import pyodbc
 import logging
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Union
 from dataclasses import dataclass
 from database.config import SQL_QUERIES, DB_SETTINGS, FIELD_MAPPINGS
 
@@ -35,6 +36,7 @@ class DatabaseUpdater:
         except Exception as e:
             logging.error(f"Error extracting report data: {e}")
             return None
+        
     
     def _get_existing_report_info(self, report_number: str) -> Tuple[Optional[str], Optional[str]]:
         """Get existing report and alert ID from database."""
@@ -45,22 +47,28 @@ class DatabaseUpdater:
         except Exception as e:
             logging.error(f"Error fetching report info for {report_number}: {e}")
             return (None, None)
-    
+        
     def _bulk_insert_report_logs(self, updates: List[ReportUpdate]) -> int:
         """Bulk insert report logs."""
         try:
             data = [
-                (update.report_id, update.alert_id, update.status_divuah, 
-                 update.comments, update.received_date, update.mispar_tkina, update.status_divuah)
+                (
+                    update.report_id,
+                    update.alert_id,
+                    update.comments,
+                    update.received_date,
+                    update.mispar_tkina,
+                    update.status_divuah
+                )
                 for update in updates
             ]
             
-            self.cursor.executemany(SQL_QUERIES['INSERT_REPORT_LOG'], data)
+            self.cursor.executemany(SQL_QUERIES['INSERT_REPORT_LOG'], data)  #TODO: check if the daytime insert successfuly
             return len(data)
         except Exception as e:
             logging.error(f"Error in bulk insert report logs: {e}")
             raise
-    
+            
     def _bulk_update_status_tracking(self, updates: List[ReportUpdate]) -> int:
         """Bulk update status tracking."""
         try:
@@ -75,6 +83,37 @@ class DatabaseUpdater:
         except Exception as e:
             logging.error(f"Error in bulk update status tracking: {e}")
             raise
+    
+    def _get_existing_reports_bulk(self, report_numbers: List[str]) -> Dict[str, Tuple[Optional[str], Optional[str]]]:
+        """Get existing report and alert IDs from database in bulk."""
+        try:
+            if not report_numbers:
+                return {}
+            
+            # Create placeholders for the IN clause
+            placeholders = ','.join(['?' for _ in report_numbers])
+            bulk_query = SQL_QUERIES['SELECT_REPORTS_BULK'].format(placeholders=placeholders)
+            
+            self.cursor.execute(bulk_query, report_numbers)
+            rows = self.cursor.fetchall()
+            
+            # Create a mapping of report_id -> (report_id, alert_id)
+            result = {}
+            for row in rows:
+                report_id = row[0]  # report_id is the first column
+                alert_id = row[1]   # alert_id is the second column
+                result[report_id] = (report_id, alert_id)
+            
+            # Fill in None values for report numbers not found
+            for report_number in report_numbers:
+                if report_number not in result:
+                    result[report_number] = (None, None)
+            
+            return result
+            
+        except Exception as e:
+            logging.error(f"Error fetching bulk report info: {e}")
+            return {report_number: (None, None) for report_number in report_numbers}
     
     def update_database_bulk(self, reports: Dict) -> Dict:
         """
@@ -97,10 +136,15 @@ class DatabaseUpdater:
         valid_updates = []
         
         try:
+            # Extract all report numbers for bulk lookup
+            report_numbers = list(reports.keys())
+            summary['total_processed'] = len(report_numbers)
+            
+            # Bulk fetch existing report info
+            existing_reports = self._get_existing_reports_bulk(report_numbers)
+            
             # Process and validate all reports
             for report_number, report_data in reports.items():
-                summary['total_processed'] += 1
-                
                 # Extract report data
                 update_data = self._extract_report_data(report_data)
                 if not update_data:
@@ -110,8 +154,8 @@ class DatabaseUpdater:
                     })
                     continue
                 
-                # Get existing report info
-                report_id, alert_id = self._get_existing_report_info(report_number)
+                # Get existing report info from bulk results
+                report_id, alert_id = existing_reports.get(report_number, (None, None))
                 
                 if not alert_id:
                     summary['failed_updates'].append({
@@ -126,11 +170,12 @@ class DatabaseUpdater:
                 
                 valid_updates.append(update_data)
                 summary['successful_updates'].append({
-                    'report_number': report_number,
                     'report_id': report_id,
                     'alert_id': alert_id,
                     'status_divuah': update_data.status_divuah,
-                    'mispar_tkina': update_data.mispar_tkina
+                    'mispar_tkina': update_data.mispar_tkina,
+                    'received_date': update_data.received_date,
+                    'comment': update_data.comments
                 })
             
             # Perform bulk operations

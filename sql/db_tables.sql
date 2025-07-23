@@ -3,7 +3,6 @@ CREATE TABLE dbo.IMP_REPORT_LOG (
     Report_id INT NOT NULL,
     Alert_id  VARCHAR(50) NOT NULL,
     Report_date DATETIME,
-    [Status] VARCHAR(50),
     Comments VARCHAR(500),
     Received_date DATETIME,
     Mispar_tkina VARCHAR(50),
@@ -23,3 +22,15 @@ CREATE TABLE IMP_REPORT_STATUS_TRACKING (
    select *  
     FROM [actone].[dbo].[alerts]
     where alert_id = 'SAM1-1781'
+
+select *
+from [actone].[dbo].IMP_REPORT_LOG
+
+
+select *
+from [actone].[dbo].IMP_REPORT_STATUS_TRACKING
+
+
+
+
+

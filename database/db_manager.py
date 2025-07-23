@@ -22,7 +22,7 @@ class DatabaseManager:
             logging.error("Failed to establish database connection.")
             return False
     
-    def update_reports(self, valid_reports: List, error_reports: List) -> List[Dict]:
+    def update_reports(self, reports: List) -> List[Dict]:
         """Update database with reports and return summary"""
         if not self.connection:
             logging.error("No database connection available")
@@ -30,13 +30,9 @@ class DatabaseManager:
         
         summary_report = []
         
-        if valid_reports:
-            logging.info("Updating database with valid reports...")
-            summary_report.extend(update_db(self.connection, valid_reports))
-        
-        if error_reports:
-            logging.info("Updating database with error reports...")
-            summary_report.extend(update_db(self.connection, error_reports))
+        if reports:
+            logging.info(f"Updating database with {len(reports)} reports...")
+            summary_report.extend(update_db(self.connection, reports))
         
         return summary_report
     

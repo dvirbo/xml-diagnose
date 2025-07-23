@@ -44,7 +44,8 @@ class XMLDiagnosePipeline:
             
             # Step 3: Update database
             if self.db_manager.connect():
-                result.summary_report = self.db_manager.update_reports(result.valid_reports, result.error_reports)
+                all_reports = result.valid_reports + result.error_reports
+                result.summary_report = self.db_manager.update_reports(all_reports)
             else:
                 logging.error("Skipping database update due to connection failure")
                 return result

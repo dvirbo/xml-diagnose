@@ -1,23 +1,34 @@
 import logging
 import requests
 from typing import Dict, List, Any, Tuple
-
-from api import login_and_get_session
+from api.api_session import login_and_get_session, load_config
 
 logging.basicConfig(level=logging.INFO)
 
 
 def process_alert(session: requests.Session, report: Dict[str, Any]) -> bool:
     """
-    Process alert by updating custom fields based on report data.
-    
+    Processes an alert by fetching its data, updating custom fields, and sending the updated data back to the server.
     Args:
-        session: HTTP session for making requests
-        report: Dictionary containing alert data with keys: alert_id, mispar_tkina, status_divuah
-        
+        session (requests.Session): The HTTP session to use for making API requests.
+        report (Dict[str, Any]): A dictionary containing the report data. 
+            Required keys include:
+                - "report_id" (str): The ID of the report.
+                - "alert_id" (str): The ID of the alert to be processed.
+                - "status_divuah" (str): The status of the report.
+                - "mispar_tkina" (str): The number that we getting from the Rashut after the report return with status "תקין"
     Returns:
-        bool: True if successful, False otherwise
+        bool: True if the alert was successfully processed and updated, False otherwise.
+    Raises:
+        None: Any exceptions encountered during processing are logged and handled internally.
+    Notes:
+        - The function validates the presence of required fields in the `report` dictionary.
+        - It fetches the alert data from the server using the `alert_id`.
+        - Custom fields in the alert are updated based on the `report` data.
+        - The updated alert is sent back to the server via a POST request.
+        - Logs errors and warnings for missing fields, failed API requests, or partial updates.
     """
+    
     try:
         # Validate required fields
         required_fields = ["report_id", "alert_id", "status_divuah", "mispar_tkina"]
@@ -26,70 +37,55 @@ def process_alert(session: requests.Session, report: Dict[str, Any]) -> bool:
         if missing_fields:
             logging.error(f"Missing required fields: {missing_fields}")
             return False
-        
-        # Extract data from report
+
+        config = load_config()
+        base_url = config['api']['base_url']
         alert_id = report.get("alert_id")
-        mispar_tkina = report.get("mispar_tkina")
-        mispar_divuah = report.get("report_id")  
-        status_divuah = report.get("status_divuah")
         
         # Fetch alert data
-        url = f'http://ifs-lab-2025:8080/ActOne/api/v1/work-items/{alert_id}'
+        url = f'{base_url}/v1/work-items/{alert_id}'
         logging.info(f"Fetching alert data for ID: {alert_id}")
         
         response = session.get(url)
-        if response.status_code != 200:
-            logging.error(f"Failed to fetch alert data. Status: {response.status_code}, Response: {response.text}")
+        if response.status_code != config['http']['success_status_code']:
+            logging.error(f"Failed to fetch alert data. Status: {response.status_code}")
+            logging.error(f"Error in alert id: {alert_id}")
             return False
 
         alert = response.json()
         
         # Update custom fields
-        updated_alert, updated_fields = _update_custom_fields(alert, {
-            "Mispar_tkina": mispar_tkina,
-            "Mispar_divuah": mispar_divuah,
-            "status_divuah": status_divuah
-        })
+        field_updates = {
+            "Mispar_tkina": report.get("mispar_tkina"),
+            "Mispar_divuah": report.get("report_id"),
+            "status_divuah": report.get("status_divuah")
+        }
         
-        # Check if all expected fields were updated
-        expected_field_count = 3
-        if len(updated_fields) != expected_field_count:
-            logging.warning(f"Expected to update {expected_field_count} fields, but only updated {len(updated_fields)}: {updated_fields}")
+        updated_alert, updated_fields = _update_custom_fields(alert, field_updates)
+        
+        # Validate all fields were updated
+        if len(updated_fields) != len(field_updates):
+            logging.warning(f"Expected {len(field_updates)} fields, updated {len(updated_fields)}")
             return False
         
-        logging.info(f"Successfully updated fields: {updated_fields}")
-        
-        # Update alert on server using PUT method
-        update_url = f'http://ifs-lab-2025:8080/ActOne/api/v1/work-items/{alert_id}'
+        # Update alert on server
         headers = {'Content-Type': 'application/json'}
+        response = session.post(url, json=updated_alert, headers=headers)
         
-        response = session.post(update_url, json=updated_alert, headers=headers)
         if response.status_code not in [200, 204]:
-            logging.error(f"Failed to update alert data. Status: {response.status_code}, Response: {response.text}")
+            logging.error(f"Failed to update alert. Status: {response.status_code}")
             return False
         
         logging.info(f"Alert {alert_id} updated successfully")
         return True
             
-    except requests.exceptions.RequestException as e:
-        logging.error(f"Network error occurred: {str(e)}")
-        return False
     except Exception as e:
-        logging.error(f"Unexpected error in process_alert: {str(e)}")
+        logging.error(f"Error in process_alert: {str(e)}")
         return False
 
 
 def _update_custom_fields(alert: Dict[str, Any], field_updates: Dict[str, Any]) -> Tuple[Dict[str, Any], List[str]]:
-    """
-    Update custom fields in the alert object.
-    
-    Args:
-        alert: Alert object containing customFields
-        field_updates: Dictionary mapping field identifiers to new values
-        
-    Returns:
-        tuple: (updated alert object, list of field identifiers that were successfully updated)
-    """
+    """Update custom fields in the alert object."""
     updated_fields = []
     custom_fields = alert.get("customFields", [])
     
@@ -103,47 +99,39 @@ def _update_custom_fields(alert: Dict[str, Any], field_updates: Dict[str, Any]) 
             old_value = field.get("value")
             new_value = field_updates[field_identifier]
             
-            # Only update if value actually changed
             if old_value != new_value:
                 field["value"] = new_value
-                updated_fields.append(field_identifier)
                 logging.info(f"Updated {field_identifier}: '{old_value}' -> '{new_value}'")
-            else:
-                logging.debug(f"Field {field_identifier} already has correct value: '{old_value}'")
-                updated_fields.append(field_identifier)  # Still count as "updated" for validation
+            
+            updated_fields.append(field_identifier)
     
     return alert, updated_fields
 
 
 def main() -> None:
     """Main function for testing the alert processing."""
+    session = None
     try:
-        # Get session
         session = login_and_get_session()
         if not session:
             logging.error("Failed to get session")
             return
         
-        # Example report data
+        # Test data
         report_data = {
             "report_id": "12345",
-            "alert_id": "SAM1-2210",
+            "alert_id": "SAM1-2210", 
             "status_divuah": "תקין",
             "mispar_tkina": "122"
         }
         
-        logging.info(f"Processing alert with data: {report_data}")
         success = process_alert(session, report_data)
-        
-        if success:
-            logging.info("Alert processed successfully")
-        else:
-            logging.error("Failed to process alert")
+        logging.info("Alert processed successfully" if success else "Failed to process alert")
             
     except Exception as e:
         logging.error(f"Error in main: {str(e)}")
     finally:
-        if 'session' in locals() and session:
+        if session:
             session.close()
 
 

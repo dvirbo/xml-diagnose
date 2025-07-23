@@ -1,15 +1,34 @@
 import logging
 import requests
-
-import sys
+import json
 import os
+import sys
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from secure_password_store.password_manager import PasswordManager
 
 
-def login_and_get_session():
+def load_config():
+    """
+    Load configuration from config.json file.
+    
+    Returns:
+        dict: Configuration data
+    """
+    config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+    try:
+        with open(config_path, 'r') as config_file:
+            return json.load(config_file)
+    except FileNotFoundError:
+        logging.error(f"[ERROR] Config file not found: {config_path}")
+        raise
+    except json.JSONDecodeError as e:
+        logging.error(f"[ERROR] Invalid JSON in config file: {e}")
+        raise
 
+
+def login_and_get_session():
     """
     Logs into the specified API endpoint and returns an authenticated session object.
     This function sends a POST request to the login URL with the provided credentials
@@ -19,30 +38,35 @@ def login_and_get_session():
         requests.Session: An authenticated session object if login is successful.
         None: If login fails or an exception occurs.
     """
-    pm = PasswordManager()
-    password = pm.get_password("ActOne")
-    logging.info(f'[INFO] Using password: {password}')  # For debugging purposes, remove in production
+    config = load_config()
     
-    login_url = 'http://ifs-lab-2025:8080/ActOne/api/public/v1/auth/login'
+    pm = PasswordManager()
+    password = pm.get_password(config['credentials']['password_key'])
+    logging.info(f'{config["logging"]["info_messages"]["password_debug"]} {password}')  # For debugging purposes, remove in production
+    
+    login_url = config['api']['base_url'] + config['api']['endpoints']['login']
     login_data = {
-        'username': 'admin',
+        'username': config['credentials']['username'],
         'password': password
     }
     session = requests.Session()
     
     try:
         login_response = session.post(login_url, json=login_data)
-        if login_response.status_code != 200:
-            logging.info('[ERROR] Login failed:', login_response.text)
+        if login_response.status_code != config['http']['success_status_code']:
+            error_msg = config['logging']['error_messages']['login_failed']
+            logging.info(f'{error_msg} {login_response.text}')
             session.close()
             return None
-        logging.info('[INFO] Logged in successfully')
+        logging.info(config['logging']['info_messages']['login_success'])
         return session
     except Exception as e:
-        print('[ERROR] Login failed:', e)
+        error_msg = config['logging']['error_messages']['login_failed']
+        print(f'{error_msg} {e}')
         session.close()
         return None
     
+
 def end_session(session):
     """
     End the current session by logging out and closing the session.
@@ -53,30 +77,33 @@ def end_session(session):
     Returns:
         bool: True if logout was successful, False otherwise
     """
-    logout_url = 'http://ifs-lab-2025:8080/ActOne/api/v1/auth/logout'
+    config = load_config()
+    logout_url = config['api']['base_url'] + config['api']['endpoints']['logout']
+    success_code = config['http']['success_status_code']
     
     try:
         logout_response = session.post(logout_url)
-        if logout_response.status_code == 200:
-            logging.info('[INFO] Logged out successfully')
+        if logout_response.status_code == success_code:
+            logging.info(config['logging']['info_messages']['logout_success'])
             session.close()
             return True
         else:
-            logging.error(f'[ERROR] Logout failed: {logout_response.text}')
+            error_msg = config['logging']['error_messages']['logout_failed']
+            logging.error(f'{error_msg} {logout_response.text}')
             session.close()
             return False
     except Exception as e:
-        logging.error(f'[ERROR] Logout failed: {e}')
+        error_msg = config['logging']['error_messages']['logout_failed']
+        logging.error(f'{error_msg} {e}')
         session.close()
         return False
 
    
-    
-        
-if __name__ == "__main__":
+if __name__ == "__main__": 
+    config = load_config()
     session = login_and_get_session()
     if session:
-        print("Session established successfully.")
+        print(config['main_messages']['session_success'])
         end_session(session)
     else:
-        print("Failed to establish session.")
+        print(config['main_messages']['session_failed'])

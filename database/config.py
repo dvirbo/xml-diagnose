@@ -15,7 +15,6 @@ CONNECTION_STRING_TEMPLATE = (
     "UID={USERNAME};"
     "PWD={PASSWORD};"
 )
-
 # SQL Queries
 SQL_QUERIES = {
     'SELECT_REPORT': """
@@ -24,10 +23,16 @@ SQL_QUERIES = {
         WHERE report_id = ?
     """,
     
+    'SELECT_REPORTS_BULK': """
+    SELECT report_id, alert_id 
+    FROM [IMP_REPORT_LOG]
+    WHERE report_id IN ({placeholders})
+    """,
+    
     'INSERT_REPORT_LOG': """
         INSERT INTO IMP_REPORT_LOG 
-        (report_id, alert_id, status, comments, received_date, mispar_tkina, status_divuah) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        (report_id, alert_id, comments, received_date, mispar_tkina, status_divuah) 
+        VALUES (?, ?, ?, ?, ?, ?)
     """,
     
     'UPDATE_STATUS_TRACKING': """
@@ -35,6 +40,7 @@ SQL_QUERIES = {
         SET Update_date = ?, Status = ?, Comments = ? 
         WHERE Report_id = ? AND alert_id = ?
     """,
+    
     
     'UPDATE_ALERTS': """
         UPDATE alerts 

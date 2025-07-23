@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?><FirstResponse DocumentReference="IE10-060774-BNK-2024">
+  <ReportFileName>FirstResponse_3</ReportFileName>
+  <ReportNumber>0523670</ReportNumber>
+  <ReportDate>2025-07-16</ReportDate>
+  <ReportInstanceDate>2025-07-16T10:11:50</ReportInstanceDate>
+  <ReportInstanceReference>00010010</ReportInstanceReference>
+  <IsStructuredReport>true</IsStructuredReport>
+  <ReportInstanceStatusId>7</ReportInstanceStatusId>
+  <ReportInstanceLegalStatusId>3</ReportInstanceLegalStatusId>
+  <ReportInstanceLegalStatusDesc>קבצים תקינים</ReportInstanceLegalStatusDesc>
+  <ReportInstanceStatusReason />
+  <Mivzak>
+    <ReportNumber xmlns="http://www.justice.gov.il/IMPA/RLS/Flash/Responses">000000245852</ReportNumber>
+    <ReportFileName xmlns="http://www.justice.gov.il/IMPA/RLS/Flash/Responses">20_01.00_0824.000000245852.zip</ReportFileName>
+    <SourceId xmlns="http://www.justice.gov.il/IMPA/RLS/Flash/Responses">20</SourceId>
+    <SourceName xmlns="http://www.justice.gov.il/IMPA/RLS/Flash/Responses">מזרחי טפחות בעמ</SourceName>
+    <ReportFlashSeq xmlns="http://www.justice.gov.il/IMPA/RLS/Flash/Responses">969569</ReportFlashSeq>
+    <Statuses xmlns="http://www.justice.gov.il/IMPA/RLS/Flash/Responses">
+      <Status id="0" name="קבצים תקינים" />
+    </Statuses>
+  </Mivzak>
+</FirstResponse>
