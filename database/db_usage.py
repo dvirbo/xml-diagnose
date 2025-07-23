@@ -137,14 +137,20 @@ class DatabaseUpdater:
         
         try:
             # Extract all report numbers for bulk lookup
-            report_numbers = list(reports.keys())
-            summary['total_processed'] = len(report_numbers)
+            # Flatten the list of dicts and collect all keys
+            # Convert report numbers to integers
+            report_numbers = [int(key) for report_dict in reports for key in report_dict.keys()]
             
             # Bulk fetch existing report info
             existing_reports = self._get_existing_reports_bulk(report_numbers)
             
+            flattened_reports = {
+                k: v for report_dict in reports 
+                for k, v in report_dict.items()
+            }
+
             # Process and validate all reports
-            for report_number, report_data in reports.items():
+            for report_number, report_data in flattened_reports.items():
                 # Extract report data
                 update_data = self._extract_report_data(report_data)
                 if not update_data:
@@ -155,7 +161,7 @@ class DatabaseUpdater:
                     continue
                 
                 # Get existing report info from bulk results
-                report_id, alert_id = existing_reports.get(report_number, (None, None))
+                report_id, alert_id = existing_reports.get(int(report_number), (None, None))
                 
                 if not alert_id:
                     summary['failed_updates'].append({
