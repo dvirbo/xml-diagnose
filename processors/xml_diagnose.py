@@ -22,9 +22,10 @@ class ProcessingResult:
 class XMLDiagnosePipeline:
     """Main pipeline for processing XML reports"""
     
-    def __init__(self, input_directory: str):
+    def __init__(self, input_directory: str, target_date: str):
+        self.input_date = target_date
         self.input_directory = input_directory
-        self.xml_processor = XMLReportProcessor(input_directory)
+        self.xml_processor = XMLReportProcessor(input_directory, target_date)
         self.db_manager = DatabaseManager()
         self.alert_updater = AlertUpdater()
     
@@ -34,7 +35,7 @@ class XMLDiagnosePipeline:
         
         try:
             # Step 1: Process XML files
-            result.error_reports, result.valid_reports = self.xml_processor.process_xml_files()
+            result.error_reports, result.valid_reports = self.xml_processor.process_xml_files(self.input_date)
             
             # Step 2: Export reports to CSV
             result.error_csv, result.valid_csv = self.xml_processor.export_reports(

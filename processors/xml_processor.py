@@ -6,15 +6,16 @@ from processors.report_xml_classifier_v2 import parse_xml_files,classify_reports
 class XMLReportProcessor:
     """Handles XML report parsing and classification"""
     
-    def __init__(self, directory: str):
+    def __init__(self, directory: str, target_date:str):
         self.directory = directory
+        self.input_date = target_date
         self.export_directory = os.path.join(directory, "exported_reports")
     
-    def process_xml_files(self) -> Tuple[List, List]:
+    def process_xml_files(self,input_date:str) -> Tuple[List, List]:
         """Parse and classify XML files"""
         logging.info("Starting XML file processing...")
         
-        first_responses, final_responses = parse_xml_files(self.directory)
+        first_responses, final_responses = parse_xml_files(self.directory, self.input_date) #TODO: need to get a date param like : ddmmyyyy
         
         # Add debugging logs
         logging.info(f"Parsed {len(first_responses) if first_responses else 0} first responses")

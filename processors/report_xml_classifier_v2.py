@@ -13,7 +13,7 @@ LEGAL_STATUS_OK = "תקין"
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
-def parse_xml_files(directory: str) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
+def parse_xml_files(directory: str, input_date: str) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
     """
     Parses XML files in the specified directory and extracts the relevant information from files with root tags
     "FirstResponse" and "FinalResponse".
@@ -39,8 +39,14 @@ def parse_xml_files(directory: str) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
     for filename in os.listdir(directory):
         if not filename.upper().endswith(".XML"):
             continue
-
-        file_path = os.path.join(directory, filename)
+        
+        # Filter by date - check if filename starts with the input date
+        if len(filename) >= 8 and filename[:8] == input_date:
+            file_path = os.path.join(directory, filename)
+            # Continue with your existing XML processing logic here
+        else:
+            continue  # Skip files that don't match the date
+        
 
         try:
             tree = ET.parse(file_path)

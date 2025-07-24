@@ -54,6 +54,18 @@ def cleanup_logs():
                 logging.info(f"Removed old log file: {filename}")
 
 
+def get_date_input(prompt="Enter date (ddmmyyyy): "):
+    """Get date input from user as string in ddmmyyyy format."""
+    while True:
+        date_str = input(prompt).strip()
+        
+        # Check if input is exactly 8 digits
+        if len(date_str) != 8 or not date_str.isdigit():
+            print("Error: Date must be exactly 8 digits in ddmmyyyy format")
+            continue
+        
+        return date_str
+
 def main():
     """Main execution function."""
     # Setup logging first
@@ -62,15 +74,32 @@ def main():
     # Cleanup old logs
     cleanup_logs()
     
+    # Get date from user
+    target_date = get_date_input("Enter report date (ddmmyyyy): ") 
+    #target_date = '13072025'
+    logging.info(f"Processing reports for date: {target_date}")
+    
     # Your main logic here
     logging.info("Starting pipeline process")
     
     config = load_config()
     input_dir = config.get('reports')
-    pipeline = XMLDiagnosePipeline(input_dir)
+    pipeline = XMLDiagnosePipeline(input_dir, target_date)
     pipeline.run()
     
 
 
 if __name__ == "__main__":
     main()
+    
+    
+    
+    '''
+    filename meaning:
+    
+    ReportDate-?-UAR-ST-ReportNumber-ReportInstanceReference.FinR.XML
+    
+    the plan is:
+    get the files that 
+
+    '''
