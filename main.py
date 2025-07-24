@@ -55,7 +55,16 @@ def cleanup_logs():
 
 
 def get_date_input(prompt="Enter date (ddmmyyyy): "):
-    """Get date input from user as string in ddmmyyyy format."""
+    """
+    Prompt the user to input a date in the ddmmyyyy format.
+    Args:
+        prompt (str): The message displayed to the user when asking for input. 
+                      Defaults to "Enter date (ddmmyyyy): ".
+    Returns:
+        str: A string representing the date entered by the user in ddmmyyyy format.
+    Raises:
+        ValueError: If the input is not exactly 8 digits or contains non-numeric characters.
+    """
     while True:
         date_str = input(prompt).strip()
         
