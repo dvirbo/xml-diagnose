@@ -46,4 +46,79 @@ The main entry point is `main.py`, which manages the entire pipeline through `XM
 ## Configuration
 - **Input directory**: Configurable via `main()` (default: `reports`)
 - **Export directory**: Auto-created as `{input_directory}/exported_reports`
-- **Logging**: Configured to `mizrahi.txt` with UTF-8 encoding (supports Hebrew)
+- **Logging**: Configured to `PipelineProcess.log` with UTF-8 encoding (supports Hebrew)
+
+
+# How to Run Password Manager
+
+## Prerequisites
+- Python 3.6 or higher
+- Install the cryptography library:
+```bash
+pip install cryptography
+```
+
+## Setup
+1. Save the password manager code as `password_manager.py`
+2. Run the script - it will automatically create the necessary files:
+   - `secret.key` (encryption key)
+   - `passwords.json` (encrypted password storage)
+
+## Usage Example
+```python
+from password_manager import PasswordManager
+
+# Create password manager instance
+pm = PasswordManager()
+
+# Add passwords
+pm.add_password("gmail", "mySecretPassword123")
+pm.add_password("facebook", "anotherPassword456")
+
+# Retrieve passwords
+password = pm.get_password("gmail")
+print(f"Gmail password: {password}")
+```
+
+## Important Notes
+- Keep `secret.key` file secure - if lost, passwords cannot be recovered
+- The script creates files in the same directory as the Python file
+- Passwords are encrypted using Fernet symmetric encryption
+- Each identifier must be unique
+
+## File Structure
+```
+your_project/
+├── password_manager.py
+├── secret.key (auto-generated)
+└── passwords.json (auto-generated)
+```
+
+## How to Run
+
+### Prerequisites
+- Python 3.6 or higher
+- Required dependencies:
+  ```bash
+  pip install cryptography requests
+  ```
+### Quick Start
+1. Navigate to the project directory
+   ```bash
+   python main.py
+   ```
+
+2. Run the application
+   ```bash
+   python main.py
+   ```
+3. Enter the report date
+
+   - When prompted, enter the date in ddmmyyyy format
+   Example: 13072025 for July 13, 2025
+   Check the results
+
+4. Check the results
+   - CSV files will be generated in the csv/ directory
+   Logs will be saved to logs/PipelineProcess.log
+   Database and alerts will be updated automatically
