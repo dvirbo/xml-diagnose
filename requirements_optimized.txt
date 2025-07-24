@@ -1,0 +1,35 @@
+# Core dependencies with optimized versions
+requests>=2.31.0
+urllib3>=2.0.0
+cryptography>=41.0.0
+
+# Database connectivity
+pyodbc>=4.0.39
+
+# Performance and concurrency
+concurrent-futures>=3.1.1; python_version < "3.2"
+
+# Optional performance enhancements
+# Uncomment these for additional performance gains:
+
+# lxml>=4.9.3  # Faster XML parsing alternative to ElementTree
+# ujson>=5.8.0  # Faster JSON parsing
+# orjson>=3.9.0  # Even faster JSON parsing (Rust-based)
+# cython>=3.0.0  # For compiling performance-critical modules
+
+# Memory profiling and monitoring (development only)
+# psutil>=5.9.0  # System and process monitoring
+# memory-profiler>=0.61.0  # Memory usage profiling
+# py-spy>=0.3.14  # Sampling profiler
+
+# Connection pooling and async support
+# aiohttp>=3.8.0  # For async HTTP requests if needed
+# asyncio-pool>=0.6.0  # Async connection pooling
+
+# CSV processing optimization
+# pandas>=2.0.0  # For large CSV operations (if needed)
+# numpy>=1.24.0  # Numerical operations
+
+# Logging and monitoring
+# structlog>=23.0.0  # Structured logging
+# prometheus-client>=0.17.0  # Metrics collection
