@@ -203,9 +203,9 @@ def rest_test():
         session.close()
 
 if __name__ == "__main__":
-    main()
+    #main()
     
-   # rest_test()
+    rest_test()
     
 
 

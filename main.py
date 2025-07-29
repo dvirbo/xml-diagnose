@@ -55,16 +55,7 @@ def cleanup_logs():
 
 
 def get_date_input(prompt="Enter date (ddmmyyyy): "):
-    """
-    Prompt the user to input a date in the ddmmyyyy format.
-    Args:
-        prompt (str): The message displayed to the user when asking for input. 
-                      Defaults to "Enter date (ddmmyyyy): ".
-    Returns:
-        str: A string representing the date entered by the user in ddmmyyyy format.
-    Raises:
-        ValueError: If the input is not exactly 8 digits or contains non-numeric characters.
-    """
+    """Get date input from user as string in ddmmyyyy format."""
     while True:
         date_str = input(prompt).strip()
         
@@ -84,8 +75,8 @@ def main():
     cleanup_logs()
     
     # Get date from user
-    target_date = get_date_input("Enter report date (ddmmyyyy): ") 
-    #target_date = '13072025'
+    #target_date = get_date_input("Enter report date (ddmmyyyy): ") 
+    target_date = '13072025'
     logging.info(f"Processing reports for date: {target_date}")
     
     # Your main logic here
@@ -108,7 +99,6 @@ if __name__ == "__main__":
     
     ReportDate-?-UAR-ST-ReportNumber-ReportInstanceReference.FinR.XML
     
-    the plan is:
-    get the files that 
+
 
     '''

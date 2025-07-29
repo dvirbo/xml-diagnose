@@ -32,3 +32,7 @@ values
         SELECT DISTINCT report_id, alert_id  FROM [actone].[dbo].[IMP_REPORT_LOG] 
         WHERE report_id IN (0523670,05236,052367)
 
+
+select *
+from [actone].[dbo].[IMP_REPORT_LOG]
+where alert_id = 'SAM1-2194'
