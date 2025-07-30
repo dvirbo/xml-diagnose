@@ -187,7 +187,8 @@ class DatabaseUpdater:
                     'status_divuah': update_data.status_divuah,
                     'mispar_tkina': update_data.mispar_tkina,
                     'received_date': update_data.received_date,
-                    'comment': update_data.comments
+                    'comment': update_data.comments,
+                    'ErrorCode': update_data.ErrorCode
                 })
             
             # Perform bulk operations
