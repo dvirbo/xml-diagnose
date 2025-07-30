@@ -20,13 +20,12 @@ def setup_logging():
     # Ensure log directory exists
     os.makedirs(LOG_DIR, exist_ok=True)
     
-    # Use base filename, let TimedRotatingFileHandler handle the date
-    log_file = os.path.join(LOG_DIR, 'PipelineProcess.log')
+    # Create date-specific log file name
+    today = datetime.now().strftime('%Y-%m-%d')
+    log_file = os.path.join(LOG_DIR, f'PipelineProcess_{today}.log')
     
-    # Configure logging
-    handler = TimedRotatingFileHandler(
-        log_file, when='midnight', interval=1, backupCount=0, encoding='utf-8'
-    )
+    # Configure logging with file handler
+    handler = logging.FileHandler(log_file, mode='a', encoding='utf-8')
     handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     
     # Clear any existing handlers and set up logging
@@ -54,14 +53,14 @@ def cleanup_logs():
                 logging.info(f"Removed old log file: {filename}")
 
 
-def get_date_input(prompt="Enter date (ddmmyyyy): "):
-    """Get date input from user as string in ddmmyyyy format."""
+def get_date_input(prompt="Enter date (dd_mm_yyyy): "):
+    """Get date input from user as string in dd_mm_yyyy format."""
     while True:
         date_str = input(prompt).strip()
         
-        # Check if input is exactly 8 digits
-        if len(date_str) != 8 or not date_str.isdigit():
-            print("Error: Date must be exactly 8 digits in ddmmyyyy format")
+        # Check if input is exactly 10 digits
+        if len(date_str) != 10 or not date_str.isdigit():
+            print("Error: Date must be exactly 10 digits in dd_mm_yyyy format")
             continue
         
         return date_str
@@ -76,15 +75,15 @@ def main():
     
     # Get date from user
     #target_date = get_date_input("Enter report date (ddmmyyyy): ") 
-    target_date = '13072025'
-    logging.info(f"Processing reports for date: {target_date}")
+    folder_date_name= '13_07_2025'
+    logging.info(f"Processing reports for date: {folder_date_name}")
     
     # Your main logic here
     logging.info("Starting pipeline process")
     
     config = load_config()
-    input_dir = config.get('reports')
-    pipeline = XMLDiagnosePipeline(input_dir, target_date)
+    input_dir = os.path.join(config.get('reports'), folder_date_name)
+    pipeline = XMLDiagnosePipeline(input_dir)
     pipeline.run()
     
 
@@ -100,5 +99,8 @@ if __name__ == "__main__":
     ReportDate-?-UAR-ST-ReportNumber-ReportInstanceReference.FinR.XML
     
 
+    fields that need to gets from IMP_REPORT_LOG table:
+    
+    ErrorCode
 
     '''

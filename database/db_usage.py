@@ -1,7 +1,6 @@
-from datetime import date, datetime
 import pyodbc
 import logging
-from typing import Dict, List, Tuple, Optional, Union
+from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
 from database.config import SQL_QUERIES, DB_SETTINGS, FIELD_MAPPINGS
 
@@ -13,6 +12,7 @@ class ReportUpdate:
     mispar_tkina: str
     received_date: str
     comments: str
+    ErrorCode: Optional[int] = None  # Optional field for error code, can be None if not present
 
 class DatabaseUpdater:
     def __init__(self, connection: pyodbc.Connection):
@@ -25,14 +25,18 @@ class DatabaseUpdater:
             first_response = report_data.get('FirstResponse', {})
             final_response = report_data.get('FinalResponse', {})
             
-            return ReportUpdate(
-                report_id=None,  # Will be set later
-                alert_id=first_response.get(FIELD_MAPPINGS['ALERT_ID'], ''),
-                status_divuah=final_response.get(FIELD_MAPPINGS['STATUS_DIVUAH'], ''),
-                mispar_tkina=final_response.get(FIELD_MAPPINGS['MISPAR_TKINA'], ''),
-                received_date=first_response.get(FIELD_MAPPINGS['RECEIVED_DATE'], ''),
-                comments=final_response.get(FIELD_MAPPINGS['COMMENTS'], '')
-            )
+            # Build parameters dictionary
+            params = {
+                'report_id': None,  # Will be set later
+                'alert_id': first_response.get(FIELD_MAPPINGS['ALERT_ID'], ''),
+                'status_divuah': final_response.get(FIELD_MAPPINGS['STATUS_DIVUAH'], ''),
+                'mispar_tkina': final_response.get(FIELD_MAPPINGS['MISPAR_TKINA'], ''),
+                'received_date': first_response.get(FIELD_MAPPINGS['RECEIVED_DATE'], ''),
+                'comments': final_response.get(FIELD_MAPPINGS['COMMENTS'], ''),
+                'ErrorCode': final_response.get('ErrorCode', '').strip() 
+                }
+            
+            return ReportUpdate(**params)
         except Exception as e:
             logging.error(f"Error extracting report data: {e}")
             return None
@@ -102,7 +106,8 @@ class DatabaseUpdater:
             for row in rows:
                 report_id = row[0]  # report_id is the first column
                 alert_id = row[1]   # alert_id is the second column
-                result[report_id] = (report_id, alert_id)
+                folder_name = row[2] # Folder_name - needed to add this into the Rashut mail
+                result[report_id] = (report_id, alert_id, folder_name)
             
             # Fill in None values for report numbers not found
             for report_number in report_numbers:
@@ -161,7 +166,9 @@ class DatabaseUpdater:
                     continue
                 
                 # Get existing report info from bulk results
-                report_id, alert_id = existing_reports.get(int(report_number), (None, None))
+                report_id, alert_id, folder_name  = existing_reports.get(int(report_number), (None, None))
+                
+                
                 
                 if not alert_id:
                     summary['failed_updates'].append({
@@ -169,15 +176,14 @@ class DatabaseUpdater:
                         'error': f'Alert ID not found for report {report_number}'
                     })
                     continue
-                
-                # Set the report_id and validate alert_id
+                                  # Set the report_id and validate alert_id
                 update_data.report_id = report_id
                 update_data.alert_id = alert_id
-                
                 valid_updates.append(update_data)
                 summary['successful_updates'].append({
                     'report_id': report_id,
                     'alert_id': alert_id,
+                    'Folder_name' : folder_name,
                     'status_divuah': update_data.status_divuah,
                     'mispar_tkina': update_data.mispar_tkina,
                     'received_date': update_data.received_date,

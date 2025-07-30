@@ -23,10 +23,9 @@ class ProcessingResult:
 class XMLDiagnosePipeline:
     """Main pipeline for processing XML reports"""
     
-    def __init__(self, input_directory: str, target_date: str):
-        self.input_date = target_date
+    def __init__(self, input_directory: str):
         self.input_directory = input_directory
-        self.xml_processor = XMLReportProcessor(input_directory, target_date)
+        self.xml_processor = XMLReportProcessor(input_directory)
         self.db_manager = DatabaseManager()
         self.alert_updater = AlertUpdater()
     
@@ -36,12 +35,18 @@ class XMLDiagnosePipeline:
         
         try:
             # Step 1: Process XML files
-            result.error_reports, result.valid_reports = self.xml_processor.process_xml_files(self.input_date)
+            result.error_reports, result.valid_reports = self.xml_processor.process_xml_files()
             
             # Step 2: Export reports to CSV
+            
+            '''
+            ** uncomment this if you want to export the reports to csv files **
+            
             result.error_csv, result.valid_csv = self.xml_processor.export_reports(
                 result.error_reports, result.valid_reports
             )
+            '''
+            
             #TODO: add a method that send the csv to the Rashut via email
             
             # Step 3: Update database

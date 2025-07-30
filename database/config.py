@@ -24,8 +24,8 @@ SQL_QUERIES = {
     """,
     
     'SELECT_REPORTS_BULK': """
-    SELECT DISTINCT report_id, alert_id 
-    FROM [IMP_REPORT_LOG]
+    SELECT report_id, alert_id, folder_name
+    FROM [IMP_REPORT_STATUS_TRACKING]
     WHERE report_id IN ({placeholders})
     """,
     

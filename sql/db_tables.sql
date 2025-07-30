@@ -24,13 +24,19 @@ CREATE TABLE IMP_REPORT_STATUS_TRACKING (
     where alert_id = 'SAM1-1781'
 
 select *
-from [actone].[dbo].IMP_REPORT_LOG
-
-
-select *
 from [actone].[dbo].IMP_REPORT_STATUS_TRACKING
 
 
 
+--523670
+select *
+from [actone].[dbo].IMP_REPORT_STATUS_TRACKING
+
+-- add Folder_name column to IMP_REPORT_LOG:
+alter table [actone].[dbo].IMP_REPORT_STATUS_TRACKING 
+ADD folder_name VARCHAR(255);
 
 
+
+-- select Folder_name from [actone].[dbo].IMP_REPORT_LOG  
+-- where 

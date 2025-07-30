@@ -100,7 +100,7 @@ your_project/
 - Python 3.6 or higher
 - Required dependencies:
   ```bash
-  pip install cryptography requests
+  pip install requests
   ```
 ### Quick Start
 1. Navigate to the project directory

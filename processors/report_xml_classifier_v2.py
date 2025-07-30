@@ -13,7 +13,7 @@ LEGAL_STATUS_OK = "תקין"
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
-def parse_xml_files(directory: str, input_date: str) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
+def parse_xml_files(directory: str) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
     """
     Parses XML files in the specified directory and extracts the relevant information from files with root tags
     "FirstResponse" and "FinalResponse".
@@ -39,15 +39,8 @@ def parse_xml_files(directory: str, input_date: str) -> Tuple[Dict[str, Dict], D
     for filename in os.listdir(directory):
         if not filename.upper().endswith(".XML"):
             continue
+        file_path = os.path.join(directory, filename)
         
-        # Filter by date - check if filename starts with the input date
-        if len(filename) >= 8 and filename[:8] == input_date:
-            file_path = os.path.join(directory, filename)
-            # Continue with your existing XML processing logic here
-        else:
-            continue  # Skip files that don't match the date
-        
-
         try:
             tree = ET.parse(file_path)
             root = tree.getroot()
@@ -69,11 +62,13 @@ def parse_xml_files(directory: str, input_date: str) -> Tuple[Dict[str, Dict], D
             report_number = _safe_get_text(root, "ReportMetaData/ReportNumber")
             if report_number:
                 legal_status = _safe_get_text(root, "ReportMetaData/ReportInstanceLegalStatusDesc")
+                ErrorCode = _safe_get_text(root,"ErrorReport/Error/ErrorCode" )
                 status_reason = "" if legal_status == LEGAL_STATUS_OK else _safe_get_text(root, "ReportMetaData/ReportInstanceStatusReason")
                 final_responses[report_number] = {
                     "ReportInstanceReference": _safe_get_text(root, "ReportMetaData/ReportInstanceReference"),
                     "ReportInstanceLegalStatusDesc": legal_status,
-                    "ReportInstanceStatusReason": status_reason
+                    "ReportInstanceStatusReason": status_reason,
+                    "ErrorCode" : ErrorCode
                 }
 
     return first_responses, final_responses
@@ -113,7 +108,7 @@ def classify_reports_by_status(first_responses: Dict[str, Dict],
     valid_reports: Dict[str, Any] = {}
 
     for report_number, final_data in final_responses.items():
-        first_data = first_responses.get(report_number)
+        first_data = first_responses.get(report_number) # get the first_responses by the report_number of the final_responses
         combined_data = {
             "ReportNumber": report_number,
             "FinalResponse": final_data,
