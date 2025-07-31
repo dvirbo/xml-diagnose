@@ -1,0 +1,23 @@
+IMP_REPORT_LOG:
+
+UPDATE by Report_id  &  Alert_id : 
+
+Report_id   -->   exist before, is it the same as  ReportNumer (FIR) 
+Alert_id  --> (exist before)
+Report_date  -->      ReportDate (FIR)
+status   --> seperate method that make AND with both tech and buiss
+tech_comment  -->  ReportInstanceStatusReason (FIR)
+Buiss_comment ->> ReportInstanceLegalStatusSeq (FIN)
+Received_date  -->  ?? ReportInstanceDate  (FIN) ??
+mispar_tkina  --> (waiting for update)
+SAR_folder_name --> exist before
+
+
+IMP_REPORT_SATUS_TRACKING:
+
+Report_id 
+Alert_id  --> getting this from 
+Update_date  --> ReportInstanceDate   (FIN)
+status   --> seperate method that make AND with both tech and buiss
+tech_comment  --> ReportInstanceLegalStatusId (FIR) (check by that..)
+Buiss_comment ->>ReportInstanceLegalStatusSeq (FIN)

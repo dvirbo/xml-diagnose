@@ -22,21 +22,21 @@ SQL_QUERIES = {
         FROM [IMP_REPORT_LOG]
         WHERE report_id = ?
     """,
-    
-    'SELECT_REPORTS_BULK': """
-    SELECT report_id, alert_id, folder_name
-    FROM [IMP_REPORT_STATUS_TRACKING]
+    #UPDATE
+    'SELECT_REPORTS_BULK': """ 
+    SELECT report_id, alert_id, SAR_folder_name
+    FROM [IMP_REPORT_LOG]
     WHERE report_id IN ({placeholders})
     """,
     
-    'INSERT_REPORT_LOG': """
-        INSERT INTO IMP_REPORT_LOG 
+    'UPDATE_REPORT_LOG': """
+        UPDATE INTO IMP_REPORT_LOG 
         (report_id, alert_id, comments, received_date, mispar_tkina, status_divuah) 
         VALUES (?, ?, ?, ?, ?, ?)
     """,
     
-    'UPDATE_STATUS_TRACKING': """
-        UPDATE IMP_REPORT_STATUS_TRACKING 
+    'INSERT_STATUS_TRACKING': """
+        INSERT IMP_REPORT_STATUS_TRACKING 
         SET Update_date = ?, Status = ?, Comments = ? 
         WHERE Report_id = ? AND alert_id = ?
     """,
@@ -55,11 +55,3 @@ DB_SETTINGS = {
     'TIMEOUT': 30
 }
 
-# Field mappings
-FIELD_MAPPINGS = {
-    'STATUS_DIVUAH': 'ReportInstanceLegalStatusDesc',
-    'MISPAR_TKINA': 'ReportInstanceReference',
-    'COMMENTS': 'ReportInstanceStatusReason',
-    'RECEIVED_DATE': 'ReportDate',
-    'ALERT_ID': 'ReportInstanceReference'
-}

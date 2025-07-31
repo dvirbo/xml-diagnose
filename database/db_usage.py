@@ -28,11 +28,11 @@ class DatabaseUpdater:
             # Build parameters dictionary
             params = {
                 'report_id': None,  # Will be set later
-                'alert_id': first_response.get(FIELD_MAPPINGS['ALERT_ID'], ''),
-                'status_divuah': final_response.get(FIELD_MAPPINGS['STATUS_DIVUAH'], ''),
-                'mispar_tkina': final_response.get(FIELD_MAPPINGS['MISPAR_TKINA'], ''),
-                'received_date': first_response.get(FIELD_MAPPINGS['RECEIVED_DATE'], ''),
-                'comments': final_response.get(FIELD_MAPPINGS['COMMENTS'], ''),
+                'alert_id': None,
+                'status_divuah': final_response.get( ''),
+                'mispar_tkina': final_response.get( ''),
+                'received_date': first_response.get( ''),
+                'comments': final_response.get(''),
                 'ErrorCode': final_response.get('ErrorCode', '').strip() 
                 }
             
@@ -52,8 +52,8 @@ class DatabaseUpdater:
             logging.error(f"Error fetching report info for {report_number}: {e}")
             return (None, None)
         
-    def _bulk_insert_report_logs(self, updates: List[ReportUpdate]) -> int:
-        """Bulk insert report logs."""
+    def _bulk_update_report_logs(self, updates: List[ReportUpdate]) -> int:
+        """Bulk update IMP_REPORT_LOG table."""
         try:
             data = [
                 (
@@ -67,14 +67,14 @@ class DatabaseUpdater:
                 for update in updates
             ]
             
-            self.cursor.executemany(SQL_QUERIES['INSERT_REPORT_LOG'], data)  #TODO: check if the daytime insert successfuly
+            self.cursor.executemany(SQL_QUERIES['UPDATE_REPORT_LOG'], data) 
             return len(data)
         except Exception as e:
             logging.error(f"Error in bulk insert report logs: {e}")
             raise
             
-    def _bulk_update_status_tracking(self, updates: List[ReportUpdate]) -> int:
-        """Bulk update status tracking."""
+    def _bulk_insert_status_tracking(self, updates: List[ReportUpdate]) -> int:
+        """Bulk insert IMP_REPORT_STATUS_TRACKING table."""
         try:
             data = [
                 (update.received_date, update.status_divuah, 
@@ -82,7 +82,7 @@ class DatabaseUpdater:
                 for update in updates
             ]
             
-            self.cursor.executemany(SQL_QUERIES['UPDATE_STATUS_TRACKING'], data)
+            self.cursor.executemany(SQL_QUERIES['INSERT_STATUS_TRACKING'], data)
             return len(data)
         except Exception as e:
             logging.error(f"Error in bulk update status tracking: {e}")
@@ -199,10 +199,10 @@ class DatabaseUpdater:
                     batch = valid_updates[i:i + batch_size]
                     
                     # Bulk insert report logs
-                    self._bulk_insert_report_logs(batch)
+                    self._bulk_update_report_logs(batch)
                     
                     # Bulk update status tracking
-                    self._bulk_update_status_tracking(batch)
+                    self._bulk_insert_status_tracking(batch)
                     
                     # Commit batch
                     self.connection.commit()
