@@ -75,7 +75,7 @@ def main():
     
     # Get date from user
     #target_date = get_date_input("Enter report date (ddmmyyyy): ") 
-    folder_date_name= '13_07_2025'
+    folder_date_name= '01_01_2025'
     logging.info(f"Processing reports for date: {folder_date_name}")
     
     # Your main logic here
@@ -95,12 +95,5 @@ if __name__ == "__main__":
     
     '''
     filename meaning:
-    
     ReportDate-?-UAR-ST-ReportNumber-ReportInstanceReference.FinR.XML
-    
-
-    fields that need to gets from IMP_REPORT_LOG table:
-    
-    ErrorCode
-
     '''

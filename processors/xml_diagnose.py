@@ -12,11 +12,8 @@ logging.basicConfig(level=logging.INFO)
 @dataclass
 class ProcessingResult:
     """Data class to hold processing results"""
-    error_csv: Optional[str] = None
-    valid_csv: Optional[str] = None
-    summary_report: List[Dict] = None
-    error_reports: List[Dict] = None
-    valid_reports: List[Dict] = None
+    summary_reports: List[Dict] = None
+    reports: List[Dict] = None
 
 
 
@@ -35,34 +32,25 @@ class XMLDiagnosePipeline:
         
         try:
             # Step 1: Process XML files
-            result.error_reports, result.valid_reports = self.xml_processor.process_xml_files()
+            result.reports = self.xml_processor.process_xml_files()
             
             # Step 2: Export reports to CSV
-            
-            '''
-            ** uncomment this if you want to export the reports to csv files **
-            
-            result.error_csv, result.valid_csv = self.xml_processor.export_reports(
-                result.error_reports, result.valid_reports
-            )
-            '''
+            #TODO:add a method the export the error reports to csv flle
             
             #TODO: add a method that send the csv to the Rashut via email
             
             # Step 3: Update database
             if self.db_manager.connect():
                 # Convert to lists if they're dictionaries, or use as-is if already lists
-                valid_reports = result.valid_reports if isinstance(result.valid_reports, list) else [result.valid_reports] if result.valid_reports else []
-                error_reports = result.error_reports if isinstance(result.error_reports, list) else [result.error_reports] if result.error_reports else []
-                all_reports = valid_reports + error_reports
-                result.summary_report = self.db_manager.update_reports(all_reports)
+                all_reports = result.reports if isinstance(result.reports, list) else [result.reports] if result.reports else []
+                result.summary_reports = self.db_manager.update_reports(all_reports)
             else:
                 logging.error("Skipping database update due to connection failure")
                 return result
             
             # Step 4: Update alerts
             if self.alert_updater.initialize_session():
-                self.alert_updater.update_alerts(result.summary_report)
+                self.alert_updater.update_alerts(result.summary_reports)
             else:
                 logging.error("Skipping alert updates due to session failure")
             

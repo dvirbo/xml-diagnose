@@ -22,11 +22,11 @@ insert into [actone].[dbo].[IMP_REPORT_LOG]
     ([Report_id]
     ,[Alert_id])
 values
-    (0523670, 'SAM1-1782')
+    (000000253339, 'SAM1-1783')
 
         SELECT * 
         FROM [actone].[dbo].[IMP_REPORT_LOG]
-        WHERE report_id = 0523670
+        WHERE report_id = 000000253339
 
 
         SELECT DISTINCT report_id, alert_id  FROM [actone].[dbo].[IMP_REPORT_LOG] 
@@ -36,3 +36,5 @@ values
 select *
 from [actone].[dbo].[IMP_REPORT_LOG]
 where alert_id = 'SAM1-2194'
+
+
