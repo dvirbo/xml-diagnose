@@ -35,6 +35,6 @@ values
 
 select *
 from [actone].[dbo].[IMP_REPORT_LOG]
-where alert_id = 'SAM1-2194'
+
 
 

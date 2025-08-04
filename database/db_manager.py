@@ -28,13 +28,11 @@ class DatabaseManager:
             logging.error("No database connection available")
             return []
         
-        summary_report = []
-        
         if reports:
             logging.info(f"Updating database with {len(reports)} reports...")
-            summary_report.extend(update_db(self.connection, reports))
+            update_reports = update_db(self.connection, reports)
         
-        return summary_report
+        return update_reports
     
     def close(self):
         """Close database connection"""

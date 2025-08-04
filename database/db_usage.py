@@ -30,82 +30,13 @@ class DatabaseUpdater:
     def __init__(self, connection: pyodbc.Connection):
         self.connection = connection
         self.cursor = connection.cursor()
-        
-    def _extract_report_data(self, report_data: Dict) -> Optional[ReportUpdate]:
-        """Extract and validate report data."""
-        try:
-            first_response = report_data.get('FirstResponse', {})
-            final_response = report_data.get('FinalResponse', {})
-            
-            # Build parameters dictionary
-            params = {
-                'report_id': None,  # Will be set later
-                'alert_id': None,
-                'status_divuah': final_response.get( ''),
-                'mispar_tkina': final_response.get( ''),
-                'received_date': first_response.get( ''),
-                'comments': final_response.get(''),
-                'ErrorCode': final_response.get('ErrorCode', '').strip() 
-                }
-            
-            return ReportUpdate(**params)
-        except Exception as e:
-            logging.error(f"Error extracting report data: {e}")
-            return None
-        
-    
-    def _get_existing_report_info(self, report_number: str) -> Tuple[Optional[str], Optional[str]]:
-        """Get existing report and alert ID from database."""
-        try: # gets report_id and alert_id from [IMP_REPORT_LOG]
-            self.cursor.execute(SQL_QUERIES['SELECT_REPORT'], (report_number,))
-            row = self.cursor.fetchone()
-            return (row[0], row[1]) if row else (None, None)
-        except Exception as e:
-            logging.error(f"Error fetching report info for {report_number}: {e}")
-            return (None, None)
-        
-    def _bulk_update_report_logs(self, updates: List[ReportUpdate]) -> int:
-        """Bulk update IMP_REPORT_LOG table."""
-        try:
-            data = [
-                (
-                    update.report_id,
-                    update.alert_id,
-                    update.comments,
-                    update.received_date,
-                    update.mispar_tkina,
-                    update.status_divuah
-                )
-                for update in updates
-            ]
-            
-            self.cursor.executemany(SQL_QUERIES['UPDATE_REPORT_LOG'], data) 
-            return len(data)
-        except Exception as e:
-            logging.error(f"Error in bulk insert report logs: {e}")
-            raise
-            
-    def _bulk_insert_status_tracking(self, updates: List[ReportUpdate]) -> int:
-        """Bulk insert IMP_REPORT_STATUS_TRACKING table."""
-        try:
-            data = [
-                (update.received_date, update.status_divuah, 
-                 update.comments, update.report_id, update.alert_id)
-                for update in updates
-            ]
-            
-            self.cursor.executemany(SQL_QUERIES['INSERT_STATUS_TRACKING'], data)
-            return len(data)
-        except Exception as e:
-            logging.error(f"Error in bulk update status tracking: {e}")
-            raise
+                
     
     def _get_existing_reports_bulk(self, report_numbers: List[str]) -> Dict[str, Tuple[Optional[str], Optional[str], Optional[str]]]:
         """Get existing report and alert IDs from database in bulk."""
         try:
             if not report_numbers:
                 return {}
-            report_numbers = list(map(lambda x: x.lstrip('0') or '0', report_numbers))
             # Create placeholders for the IN clause
             placeholders = ','.join(['?' for _ in report_numbers])
             bulk_query = SQL_QUERIES['SELECT_REPORTS_BULK'].format(placeholders=placeholders)
@@ -120,11 +51,6 @@ class DatabaseUpdater:
                 alert_id = row[1]   # alert_id is the second column
                 folder_name = row[2] # Folder_name - need to sent as part of the csv file
                 result[report_id] = (report_id, alert_id, folder_name)
-            
-            # Fill in None values for report numbers not found
-            for report_number in report_numbers:
-                if report_number not in result:
-                    result[report_number] = (None, None, None)
             
             return result
             
@@ -158,24 +84,7 @@ class DatabaseUpdater:
             reports_items = list(reports.items())
             logging.debug(f"Dict case - report_numbers: {report_numbers}")
             logging.debug(f"Dict case - reports_items count: {len(reports_items)}")
-        else:
-            # Handle list input (fallback for backward compatibility)
-            if reports and isinstance(reports[0], dict):
-                # List of dictionaries - extract report numbers from ReportNumber field
-                report_numbers = []
-                reports_items = []
-                for report_dict in reports:
-                    report_number = report_dict.get('ReportNumber')
-                    if report_number:
-                        report_numbers.append(report_number)
-                        reports_items.append((report_number, report_dict))
-                    else:
-                        logging.warning(f"Skipping report with no ReportNumber: {report_dict}")
-            else:
-                # List of strings (report numbers)
-                report_numbers = reports
-                reports_items = [(report_num, {}) for report_num in reports]
-        
+    
         # Ensure all report_numbers are strings
         report_numbers = [str(rn) for rn in report_numbers if rn is not None]
         logging.debug(f"Final report_numbers: {report_numbers}")
@@ -198,7 +107,7 @@ class DatabaseUpdater:
         """
         try:
             # Get existing report info
-            existing_info = existing_reports.get(report_number, (None, None, None))
+            existing_info = existing_reports.get(int(report_number), (None, None, None)) #TODO:check it
             report_id, alert_id, sar_folder_name = existing_info
             
             if not report_id or not alert_id:
@@ -342,6 +251,15 @@ class DatabaseUpdater:
             
             existing_reports = self._get_existing_reports_bulk(report_numbers)
             logging.info(f"Found {len(existing_reports)} existing reports in database")
+
+
+            for report_dict in reports:
+                for report_number, report_data in report_dict.items():
+                    report_num_int = int(report_number)
+                    if report_num_int in existing_reports:
+                        sam1_value = existing_reports[report_num_int][1]  # Extract 'SAM1-xxxx'
+                        report_data['alert_id'] = sam1_value  # Add it to the report
+
             
             # Step 2: Process reports and prepare updates
             updates_for_report_log = []
@@ -386,6 +304,7 @@ class DatabaseUpdater:
             # Step 4: Commit the transaction
             self.connection.commit()
             logging.info(f"Database update completed successfully. Updated {processed_count} reports.")
+            return reports
             
         except Exception as e:
             # Rollback on error
@@ -405,6 +324,4 @@ def update_db(connection: pyodbc.Connection, reports: Union[Dict, List]) -> str:
         str: Summary of the updates made
     """
     updater = DatabaseUpdater(connection)
-    updater.update_database_bulk(reports)
-    
-    return "Database update completed successfully"
+    return updater.update_database_bulk(reports)

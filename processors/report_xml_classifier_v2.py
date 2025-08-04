@@ -64,6 +64,7 @@ def parse_xml_files(directory: str) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
 def _parse_first_response(root) -> Dict[str, Dict]:
     """Extract data from FirstResponse XML."""
     report_number = _safe_get_text(root, "ReportNumber")
+    report_number = report_number.lstrip('0')
     if not report_number:
         logging.warning("FirstResponse missing ReportNumber, skipping")
         return {}
@@ -87,6 +88,7 @@ def _parse_first_response(root) -> Dict[str, Dict]:
 def _parse_final_response(root) -> Dict[str, Dict]:
     """Extract data from FinalResponse XML."""
     report_number = _safe_get_text(root, "ReportMetaData/ReportNumber")
+    report_number = report_number.lstrip('0')
     if not report_number:
         logging.warning("FinalResponse missing ReportNumber, skipping")
         return {}
@@ -167,13 +169,13 @@ def link_responses(first_responses: Dict[str, Dict],
         if first_data is None:
             status_category = "MISSING_FIRST_RESPONSE"
         elif not first_valid and not final_valid:
-            status_category = "BOTH_INVALID"
+            status_category = "דיווח לא תקין"
         elif first_valid and not final_valid:
             status_category = "FIRST_VALID_FINAL_INVALID"
         elif not first_valid and final_valid:
             status_category = "FIRST_INVALID_FINAL_VALID"
         else:
-            status_category = "BOTH_VALID"
+            status_category = "דיווח תקין"
         
         combined_data = {
             "ReportNumber": report_number,

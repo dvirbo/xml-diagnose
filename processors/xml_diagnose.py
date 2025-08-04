@@ -43,14 +43,14 @@ class XMLDiagnosePipeline:
             if self.db_manager.connect():
                 # Convert to lists if they're dictionaries, or use as-is if already lists
                 all_reports = result.reports if isinstance(result.reports, list) else [result.reports] if result.reports else []
-                result.summary_reports = self.db_manager.update_reports(all_reports)
+                result.summary_reports = self.db_manager.update_reports(all_reports) #TODO: remove the comment when the db_manager is ready
             else:
                 logging.error("Skipping database update due to connection failure")
                 return result
             
             # Step 4: Update alerts
             if self.alert_updater.initialize_session():
-                self.alert_updater.update_alerts(result.summary_reports)
+                self.alert_updater.update_alerts(all_reports)
             else:
                 logging.error("Skipping alert updates due to session failure")
             
