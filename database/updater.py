@@ -1,30 +1,34 @@
+"""Database update operations."""
 import pyodbc
 import logging
 from typing import Dict, List, Tuple, Optional, Union
-from dataclasses import dataclass
-from database.config import SQL_QUERIES, DB_SETTINGS
+from database.queries import SQL_QUERIES, DB_SETTINGS
 
-@dataclass
+
 class ReportUpdate:
-    report_id: str
-    alert_id: str
-    status_divuah: str
-    mispar_tkina: str
-    received_date: str
-    comments: str
-    ErrorCode: Optional[int] = None  # Optional field for error code, can be None if not present
+    """Data class to hold report update information (Python 3.6 compatible)"""
+    def __init__(self, report_id, alert_id, status_divuah, mispar_tkina, received_date, comments, ErrorCode=None):
+        self.report_id = report_id
+        self.alert_id = alert_id
+        self.status_divuah = status_divuah
+        self.mispar_tkina = mispar_tkina
+        self.received_date = received_date
+        self.comments = comments
+        self.ErrorCode = ErrorCode  # Optional field for error code, can be None if not present
 
-@dataclass
+
 class ProcessedReport:
-    """Data class to hold processed report information"""
-    report_number: str
-    report_data: Dict
-    report_id: Optional[str]
-    alert_id: Optional[str]
-    sar_folder_name: Optional[str]
-    first_response: Dict
-    final_response: Dict
-    status: Dict
+    """Data class to hold processed report information (Python 3.6 compatible)"""
+    def __init__(self, report_number, report_data, report_id, alert_id, sar_folder_name, first_response, final_response, status):
+        self.report_number = report_number
+        self.report_data = report_data
+        self.report_id = report_id
+        self.alert_id = alert_id
+        self.sar_folder_name = sar_folder_name
+        self.first_response = first_response
+        self.final_response = final_response
+        self.status = status
+
 
 class DatabaseUpdater:
     def __init__(self, connection: pyodbc.Connection):
@@ -55,7 +59,7 @@ class DatabaseUpdater:
             return result
             
         except Exception as e:
-            logging.error(f"Error fetching bulk report info: {e}")
+            logging.error("Error fetching bulk report info: {}".format(e))
             return {report_number: (None, None, None) for report_number in report_numbers}
 
     def _parse_reports_input(self, reports: Union[Dict, List]) -> Tuple[List[str], List[Tuple[str, Dict]]]:
@@ -71,7 +75,7 @@ class DatabaseUpdater:
         Returns:
             Tuple of (report_numbers, reports_items)
         """
-        logging.debug(f"_parse_reports_input called with type: {type(reports)}")
+        logging.debug("_parse_reports_input called with type: {}".format(type(reports)))
         
         # Handle list containing a single dictionary
         if isinstance(reports, list) and len(reports) == 1 and isinstance(reports[0], dict):
@@ -82,13 +86,13 @@ class DatabaseUpdater:
             # Input is a dictionary with report numbers as keys
             report_numbers = list(reports.keys())
             reports_items = list(reports.items())
-            logging.debug(f"Dict case - report_numbers: {report_numbers}")
-            logging.debug(f"Dict case - reports_items count: {len(reports_items)}")
+            logging.debug("Dict case - report_numbers: {}".format(report_numbers))
+            logging.debug("Dict case - reports_items count: {}".format(len(reports_items)))
     
         # Ensure all report_numbers are strings
         report_numbers = [str(rn) for rn in report_numbers if rn is not None]
-        logging.debug(f"Final report_numbers: {report_numbers}")
-        logging.debug(f"Final reports_items count: {len(reports_items)}")
+        logging.debug("Final report_numbers: {}".format(report_numbers))
+        logging.debug("Final reports_items count: {}".format(len(reports_items)))
         
         return report_numbers, reports_items
 
@@ -111,7 +115,7 @@ class DatabaseUpdater:
             report_id, alert_id, sar_folder_name = existing_info
             
             if not report_id or not alert_id:
-                logging.warning(f"Report {report_number} not found in database")
+                logging.warning("Report {} not found in database".format(report_number))
                 return None
             
             # Extract data from parsed report
@@ -131,7 +135,7 @@ class DatabaseUpdater:
             )
             
         except Exception as e:
-            logging.error(f"Error processing report {report_number}: {e}")
+            logging.error("Error processing report {}: {}".format(report_number, e))
             return None
 
     def _prepare_report_log_update(self, processed_report: ProcessedReport) -> Tuple:
@@ -213,18 +217,18 @@ class DatabaseUpdater:
         if updates_for_report_log:
             try:
                 self.cursor.executemany(SQL_QUERIES['UPDATE_REPORT_LOG'], updates_for_report_log)
-                logging.info(f"Updated {len(updates_for_report_log)} records in IMP_REPORT_LOG")
+                logging.info("Updated {} records in IMP_REPORT_LOG".format(len(updates_for_report_log)))
             except Exception as e:
-                logging.error(f"Error updating IMP_REPORT_LOG: {e}")
+                logging.error("Error updating IMP_REPORT_LOG: {}".format(e))
                 raise
         
         # Insert into IMP_REPORT_STATUS_TRACKING
         if updates_for_status_tracking:
             try:
                 self.cursor.executemany(SQL_QUERIES['INSERT_STATUS_TRACKING'], updates_for_status_tracking)
-                logging.info(f"Inserted {len(updates_for_status_tracking)} records in IMP_REPORT_STATUS_TRACKING")
+                logging.info("Inserted {} records in IMP_REPORT_STATUS_TRACKING".format(len(updates_for_status_tracking)))
             except Exception as e:
-                logging.error(f"Error inserting into IMP_REPORT_STATUS_TRACKING: {e}")
+                logging.error("Error inserting into IMP_REPORT_STATUS_TRACKING: {}".format(e))
                 raise
 
     def update_database_bulk(self, reports: Union[Dict, List]) -> None:
@@ -239,18 +243,18 @@ class DatabaseUpdater:
                 logging.info("No reports to process")
                 return
             
-            logging.info(f"Starting bulk update for {len(reports)} reports")
-            logging.debug(f"Input reports type: {type(reports)}")
+            logging.info("Starting bulk update for {} reports".format(len(reports)))
+            logging.debug("Input reports type: {}".format(type(reports)))
             if isinstance(reports, dict):
-                logging.debug(f"Report keys: {list(reports.keys())}")
+                logging.debug("Report keys: {}".format(list(reports.keys())))
             
             # Step 1: Parse input and get existing reports
             report_numbers, reports_items = self._parse_reports_input(reports)
-            logging.info(f"Parsed {len(report_numbers)} report numbers: {report_numbers[:5]}...")  # Show first 5
-            logging.info(f"Parsed {len(reports_items)} report items")
+            logging.info("Parsed {} report numbers: {}...".format(len(report_numbers), report_numbers[:5]))  # Show first 5
+            logging.info("Parsed {} report items".format(len(reports_items)))
             
             existing_reports = self._get_existing_reports_bulk(report_numbers)
-            logging.info(f"Found {len(existing_reports)} existing reports in database")
+            logging.info("Found {} existing reports in database".format(len(existing_reports)))
 
 
             for report_dict in reports:
@@ -270,7 +274,7 @@ class DatabaseUpdater:
             failed_count = 0
             
             for report_number, report_data in reports_items:
-                logging.debug(f"Processing report {report_number}")
+                logging.debug("Processing report {}".format(report_number))
                 
                 processed_report = self._process_single_report(
                     report_number, report_data, existing_reports
@@ -278,7 +282,7 @@ class DatabaseUpdater:
                 
                 if processed_report is None:
                     missing_count += 1
-                    logging.debug(f"Report {report_number} not found in database or processing failed")
+                    logging.debug("Report {} not found in database or processing failed".format(report_number))
                     continue
                 
                 try:
@@ -290,27 +294,28 @@ class DatabaseUpdater:
                     updates_for_status_tracking.append(status_tracking_insert)
                     
                     processed_count += 1
-                    logging.debug(f"Successfully prepared updates for report {report_number}")
+                    logging.debug("Successfully prepared updates for report {}".format(report_number))
                     
                 except Exception as e:
                     failed_count += 1
-                    logging.error(f"Error preparing updates for report {report_number}: {e}")
+                    logging.error("Error preparing updates for report {}: {}".format(report_number, e))
             
-            logging.info(f"Processed {processed_count} reports, {missing_count} missing from DB, {failed_count} failed")
+            logging.info("Processed {} reports, {} missing from DB, {} failed".format(processed_count, missing_count, failed_count))
             
             # Step 3: Execute bulk updates
             self._execute_bulk_updates(updates_for_report_log, updates_for_status_tracking)
             
             # Step 4: Commit the transaction
             self.connection.commit()
-            logging.info(f"Database update completed successfully. Updated {processed_count} reports.")
+            logging.info("Database update completed successfully. Updated {} reports.".format(processed_count))
             return reports
             
         except Exception as e:
             # Rollback on error
             self.connection.rollback()
-            logging.error(f"Database update failed: {e}")
+            logging.error("Database update failed: {}".format(e))
             raise
+
 
 def update_db(connection: pyodbc.Connection, reports: Union[Dict, List]) -> str:
     """
@@ -325,3 +330,4 @@ def update_db(connection: pyodbc.Connection, reports: Union[Dict, List]) -> str:
     """
     updater = DatabaseUpdater(connection)
     return updater.update_database_bulk(reports)
+

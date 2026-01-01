@@ -1,20 +1,20 @@
+"""Main pipeline for processing XML reports."""
 import logging
 from typing import List, Dict, Optional
-from dataclasses import dataclass
 from api.alert_updater import AlertUpdater
 from api.api_session import end_session
-from database.db_manager import DatabaseManager
+from database.manager import DatabaseManager
 from processors.xml_processor import XMLReportProcessor
 
 
 logging.basicConfig(level=logging.INFO)
 
-@dataclass
-class ProcessingResult:
-    """Data class to hold processing results"""
-    summary_reports: List[Dict] = None
-    reports: List[Dict] = None
 
+class ProcessingResult:
+    """Data class to hold processing results (Python 3.6 compatible)"""
+    def __init__(self, summary_reports=None, reports=None):
+        self.summary_reports = summary_reports
+        self.reports = reports
 
 
 class XMLDiagnosePipeline:
@@ -57,7 +57,7 @@ class XMLDiagnosePipeline:
             logging.info("Pipeline execution completed successfully")
             
         except Exception as e:
-            logging.error(f"Pipeline execution failed: {str(e)}")
+            logging.error("Pipeline execution failed: {}".format(str(e)))
             raise
         
         finally:
@@ -69,5 +69,4 @@ class XMLDiagnosePipeline:
             
         
         return result
-    
-    #some test code
+

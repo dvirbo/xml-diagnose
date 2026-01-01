@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from database.db_usage import DatabaseUpdater
+from database.updater import DatabaseUpdater
 import logging
 
 # Set up logging to see debug messages

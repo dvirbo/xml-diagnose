@@ -1,9 +1,8 @@
+"""Database manager for handling database operations."""
 import logging
 from typing import List, Dict
-
-
-from database.db_usage import update_db
-from database.establish_db import connect_to_database
+from database.connection import connect_to_database
+from database.updater import update_db
 
 
 class DatabaseManager:
@@ -29,7 +28,7 @@ class DatabaseManager:
             return []
         
         if reports:
-            logging.info(f"Updating database with {len(reports)} reports...")
+            logging.info("Updating database with {} reports...".format(len(reports)))
             update_reports = update_db(self.connection, reports)
         
         return update_reports
@@ -39,3 +38,4 @@ class DatabaseManager:
         if self.connection:
             self.connection.close()
             logging.info("Database connection closed.")
+

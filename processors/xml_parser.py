@@ -1,3 +1,4 @@
+"""XML parsing utilities for FirstResponse and FinalResponse XML files."""
 import os
 import logging
 from typing import Dict, Tuple, Any, List
@@ -30,7 +31,7 @@ def parse_xml_files(directory: str) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
         ET.ParseError: If XML files are malformed
     """
     if not os.path.exists(directory):
-        raise FileNotFoundError(f"Directory not found: {directory}")
+        raise FileNotFoundError("Directory not found: {}".format(directory))
 
     first_responses: Dict[str, Any] = {}
     final_responses: Dict[str, Any] = {}
@@ -45,10 +46,10 @@ def parse_xml_files(directory: str) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
             tree = ET.parse(file_path)
             root = tree.getroot()
         except ET.ParseError as e:
-            logging.warning(f"Could not parse {filename}: {e}")
+            logging.warning("Could not parse {}: {}".format(filename, e))
             continue
         except Exception as e:
-            logging.error(f"Unexpected error parsing {filename}: {e}")
+            logging.error("Unexpected error parsing {}: {}".format(filename, e))
             continue
 
         if root.tag == FIRST_RESPONSE_TAG:
@@ -56,7 +57,7 @@ def parse_xml_files(directory: str) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
         elif root.tag == FINAL_RESPONSE_TAG:
             final_responses.update(_parse_final_response(root))
         else:
-            logging.debug(f"Skipping {filename}: Unknown root tag '{root.tag}'")
+            logging.debug("Skipping {}: Unknown root tag '{}'".format(filename, root.tag))
 
     return first_responses, final_responses
 
@@ -197,11 +198,3 @@ def link_responses(first_responses: Dict[str, Dict],
 
     return reports
 
-'''
-
-{'ReportNumber': '5236', 
-'FirstResponse': {'ReportDate': '2025-07-13', 'ReportInstanceReference': '000100', 'ReportInstanceLegalStatusDesc': 'הדיווח נחסם: נקלט בעבר', 'valid': False, 'ReportInstanceStatusReason': 'קובץ דיווח בשם זהה נקלט בעבר', 'ReportInstanceStatusId': '', 'ReportInstanceLegalStatusId': ''}
-, 'FinalResponse': {'ReportInstanceReference': '000100', 'ReportInstanceLegalStatusDesc': 'לא תקין', 'ReportInstanceStatusSeq': '', 'ReportInstanceLegalStatusSeq': '', 'valid': False, 'ReportInstanceStatusReason': 'הדיווח אינו תקין ולא נקלט ברשות.   ראה פירוט בדוח שגויים.  יש להעביר דיווח מתקן בהתאם לדוח שגויים ובתיאום מראש עם הרשות.', 'ErrorCode': '9638'}
-, 'Status': {'first_response_valid': False, 'final_response_valid': False, 'overall_valid': False, 'status_category': 'BOTH_INVALID', 'first_status_desc': 'הדיווח נחסם: נקלט בעבר', 'final_status_desc': 'לא תקין', 'has_first_response': True, 'has_final_response': True}}
-
-'''

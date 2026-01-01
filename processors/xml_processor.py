@@ -1,7 +1,7 @@
 import os
 import logging
 from typing import List, Tuple
-from processors.report_xml_classifier_v2 import link_responses, parse_xml_files
+from processors.xml_parser import link_responses, parse_xml_files
 
 class XMLReportProcessor:
     """Handles XML report parsing and classification"""
@@ -17,8 +17,10 @@ class XMLReportProcessor:
         first_responses, final_responses = parse_xml_files(self.directory) 
         
         # Add debugging logs
-        logging.info(f"Parsed {len(first_responses) if first_responses else 0} first responses")
-        logging.info(f"Parsed {len(final_responses) if final_responses else 0} final responses")
+        first_count = len(first_responses) if first_responses else 0
+        final_count = len(final_responses) if final_responses else 0
+        logging.info("Parsed {} first responses".format(first_count))
+        logging.info("Parsed {} final responses".format(final_count))
         
         # Handle potential None return from classify_reports_by_status
         combined_reports = link_responses(first_responses, final_responses)

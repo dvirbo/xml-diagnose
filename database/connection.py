@@ -1,15 +1,8 @@
+"""Database connection management."""
 import pyodbc
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from database.config import DB_CONFIG, CONNECTION_STRING_TEMPLATE
 from secure_password_store.password_manager import PasswordManager
 
-def get_connection_string():
-    """Generate connection string from configuration."""
-    return CONNECTION_STRING_TEMPLATE.format(**DB_CONFIG) 
 
 def connect_to_database():
     """Establish database connection using configuration."""
@@ -27,20 +20,6 @@ def connect_to_database():
         connection = pyodbc.connect(connection_string)
         return connection
     except pyodbc.Error as e:
-        print(f"Database connection failed: {e}")
+        print("Database connection failed: {}".format(e))
         return None
-    
-    
-
-def main():
-    connection = connect_to_database()
-    if connection:
-        print("Database connection established successfully.")
-        # You can add more logic here, like executing a test query
-        connection.close()
-    else:
-        print("Failed to connect to the database.")
-
-if __name__ == "__main__":
-    main()
 

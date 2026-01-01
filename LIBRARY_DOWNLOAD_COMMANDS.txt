@@ -1,0 +1,71 @@
+# Python 3.6.8 Compatible Library Download Commands
+# Run these commands on a machine with internet access
+# All wheels will be downloaded for Python 3.6 and Linux x86_64 platform
+
+# ==============================================================================
+# CORE DEPENDENCIES (Required)
+# ==============================================================================
+
+# Database connectivity
+pip download pyodbc==4.0.39 --dest wheels_xml --python-version 3.6 --platform linux_x86_64 --only-binary=:all:
+
+# HTTP library for API calls
+pip download requests==2.27.1 --dest wheels_xml --python-version 3.6 --platform linux_x86_64 --only-binary=:all:
+
+# Password encryption/decryption
+pip download cryptography==3.4.8 --dest wheels_xml --python-version 3.6 --platform linux_x86_64 --only-binary=:all:
+
+# ==============================================================================
+# REQUESTS DEPENDENCIES (Required by requests)
+# ==============================================================================
+
+# SSL certificates
+pip download certifi==2021.10.8 --dest wheels_xml --python-version 3.6 --platform linux_x86_64 --only-binary=:all:
+
+# Character encoding
+pip download charset-normalizer==2.0.12 --dest wheels_xml --python-version 3.6 --platform linux_x86_64 --only-binary=:all:
+
+# Internationalized Domain Names
+pip download idna==3.3 --dest wheels_xml --python-version 3.6 --platform linux_x86_64 --only-binary=:all:
+
+# HTTP client library
+pip download urllib3==1.26.18 --dest wheels_xml --python-version 3.6 --platform linux_x86_64 --only-binary=:all:
+
+# ==============================================================================
+# CRYPTOGRAPHY DEPENDENCIES (Required by cryptography)
+# ==============================================================================
+
+# Note: cryptography may require additional dependencies that will be automatically downloaded
+# These are typically:
+# - cffi (C Foreign Function Interface)
+# - pycparser (C parser used by cffi)
+# If needed, add:
+# pip download cffi==1.15.1 --dest wheels_xml --python-version 3.6 --platform linux_x86_64 --only-binary=:all:
+
+# ==============================================================================
+# OPTIONAL DEPENDENCIES (Only if using SOAP functionality)
+# ==============================================================================
+
+# SOAP client library
+# pip download zeep==4.1.0 --dest wheels_xml --python-version 3.6 --platform linux_x86_64 --only-binary=:all:
+
+# Request caching
+# pip download requests-cache==0.9.8 --dest wheels_xml --python-version 3.6 --platform linux_x86_64 --only-binary=:all:
+
+# XML processing for zeep
+# pip download lxml==4.9.3 --dest wheels_xml --python-version 3.6 --platform linux_x86_64 --only-binary=:all:
+
+# ISO date parsing for zeep
+# pip download isodate==0.6.1 --dest wheels_xml --python-version 3.6 --platform linux_x86_64 --only-binary=:all:
+
+# ==============================================================================
+# INSTALLATION INSTRUCTIONS
+# ==============================================================================
+# 
+# 1. Run all the above commands (or use the download_libs.sh script)
+# 2. Transfer all .whl files from wheels_xml/ to your libs/ folder using WinSCP
+# 3. On the target machine, install using:
+#    python3.6 -m pip install --no-index libs/*.whl
+#
+# ==============================================================================
+
