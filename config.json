@@ -1,5 +1,0 @@
-{
-    "log_directory": "logs",
-    "retention_days": 90,
-    "reports" : "reports"
-}

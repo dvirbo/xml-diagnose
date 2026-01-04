@@ -11,21 +11,13 @@ from secure_password_store.password_manager import PasswordManager
 
 def load_config():
     """
-    Load configuration from config.json file.
+    Load API configuration from unified config.ini file.
     
     Returns:
-        dict: Configuration data
+        dict: Configuration data (compatible with old api_config.json structure)
     """
-    config_path = os.path.join(os.path.dirname(__file__), 'api_config.json')
-    try:
-        with open(config_path, 'r') as config_file:
-            return json.load(config_file)
-    except FileNotFoundError:
-        logging.error(f"[ERROR] Config file not found: {config_path}")
-        raise
-    except json.JSONDecodeError as e:
-        logging.error(f"[ERROR] Invalid JSON in config file: {e}")
-        raise
+    from utils.config_loader import get_api_config
+    return get_api_config()
 
 
 def login_and_get_session():
@@ -72,11 +64,16 @@ def end_session(session):
     End the current session by logging out and closing the session.
     
     Args:
-        session: The requests Session object to end
+        session: The requests Session object to end (can be None)
         
     Returns:
         bool: True if logout was successful, False otherwise
     """
+    # Check if session exists
+    if session is None:
+        logging.debug("No session to close")
+        return False
+    
     config = load_config()
     logout_url = config['api']['base_url'] + config['api']['endpoints']['logout']
     success_code = config['http']['success_status_code']
@@ -95,7 +92,10 @@ def end_session(session):
     except Exception as e:
         error_msg = config['logging']['error_messages']['logout_failed']
         logging.error(f'{error_msg} {e}')
-        session.close()
+        try:
+            session.close()
+        except:
+            pass  # Ignore errors when closing an already closed session
         return False
 
    

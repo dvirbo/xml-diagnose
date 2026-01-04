@@ -1,50 +1,20 @@
-# Database configuration
-DB_CONFIG = {
-    'DRIVER': '{ODBC Driver 17 for SQL Server}',
-    'SERVER': 'ifs-lab-2025',
-    'DATABASE': 'actone',
-    'USERNAME': 'sa',
-    'PASSWORD': ''
-}
+"""Database configuration - loads from unified config.ini file."""
+from utils.config_loader import get_database_config
 
-# Connection string template
-CONNECTION_STRING_TEMPLATE = (
-    "DRIVER={DRIVER};"
-    "SERVER={SERVER};"
-    "DATABASE={DATABASE};"
-    "UID={USERNAME};"
-    "PWD={PASSWORD};"
-)
-# SQL Queries
-SQL_QUERIES = {
-    'SELECT_REPORT': """
-        SELECT report_id, alert_id 
-        FROM [IMP_REPORT_LOG]
-        WHERE report_id = ?
-    """,
-    #UPDATE
-    'SELECT_REPORTS_BULK': """ 
-    SELECT distinct report_id, alert_id, SAR_folder_name
-    FROM [IMP_REPORT_LOG]
-    WHERE report_id IN ({placeholders})
-    """,
-    
-    'UPDATE_REPORT_LOG': """
-        UPDATE IMP_REPORT_LOG 
-        SET report_date = ?, first_response_valid = ?, final_response_valid = ?, received_date = ?, mispar_tkina = ?, status_desc = ? 
-        WHERE report_id = ?
-    """,
-    
-    'INSERT_STATUS_TRACKING': """
-        INSERT INTO IMP_REPORT_STATUS_TRACKING 
-        (Report_id, alert_id, update_date, status, comments, first_response_valid, final_response_valid)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """
+# Get database configuration from unified config.ini
+_db_config = get_database_config()
+
+DB_CONFIG = {
+    'HOST': _db_config['HOST'],
+    'PORT': _db_config['PORT'],
+    'SERVICE_NAME': _db_config['SERVICE_NAME'],
+    'USERNAME': _db_config['USERNAME'],
+    'PASSWORD': _db_config['PASSWORD']
 }
 
 # Database settings
 DB_SETTINGS = {
-    'BATCH_SIZE': 1000,
-    'TIMEOUT': 30
+    'BATCH_SIZE': _db_config['BATCH_SIZE'],
+    'TIMEOUT': _db_config['TIMEOUT']
 }
 

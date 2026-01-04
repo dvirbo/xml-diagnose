@@ -10,7 +10,7 @@ The main entry point is `main.py`, which manages the entire pipeline through `XM
 ```
 xml-diagnose/
 ├── main.py                      # Main entry point
-├── config.json                  # Configuration file
+├── config.ini                   # Unified configuration file
 ├── requirements.txt             # Python dependencies (Python 3.6 compatible)
 ├── libs/                        # Local wheel files for offline installation
 │   └── README.md                # Installation instructions
@@ -88,7 +88,7 @@ The script will:
 
 ### Configuration
 
-Edit `config.json` to configure:
+Edit `config.ini` to configure:
 - `log_directory`: Directory for log files
 - `retention_days`: How long to keep log files
 - `reports`: Base directory for report folders
@@ -109,7 +109,7 @@ reports/
 
 ### Input
 - XML files from `reports` directory (organized by date)
-- Configuration from `config.json`
+- Configuration from `config.ini`
 
 ### Processing Steps
 1. **XML Parsing**: Parse `FirstResponse` and `FinalResponse` XML files

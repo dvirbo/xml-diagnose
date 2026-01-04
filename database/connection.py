@@ -1,25 +1,38 @@
 """Database connection management."""
-import pyodbc
-from database.config import DB_CONFIG, CONNECTION_STRING_TEMPLATE
+import cx_Oracle as oracledb
+from database.config import DB_CONFIG
 from secure_password_store.password_manager import PasswordManager
 
 
 def connect_to_database():
-    """Establish database connection using configuration."""
+    """Establish Oracle database connection using configuration.
+    
+    Uses Easy Connect String format (same as sqlplus):
+    username/password@host:port/service_name
+    """
     try:
-        pm = PasswordManager()
-        password = pm.get_password("db_sa")
+        # Use password from config directly
+        # Note: We skip secure storage for Oracle since credentials are in config
+        password = DB_CONFIG['PASSWORD']
         
-        # Add password to the config
-        db_config = DB_CONFIG.copy()  # Make a copy to avoid modifying the original
-        db_config['PASSWORD'] = password
+        # Use Easy Connect String format (same as sqlplus command line)
+        # Format: username/password@host:port/service_name
+        easy_connect_string = "{}/{}@{}:{}/{}".format(
+            DB_CONFIG['USERNAME'],
+            password,
+            DB_CONFIG['HOST'],
+            DB_CONFIG['PORT'],
+            DB_CONFIG['SERVICE_NAME']
+        )
         
-        # Build connection string directly with all config including password
-        connection_string = CONNECTION_STRING_TEMPLATE.format(**db_config)
-
-        connection = pyodbc.connect(connection_string)
+        # Create connection using Easy Connect String
+        connection = oracledb.connect(easy_connect_string)
+        
         return connection
-    except pyodbc.Error as e:
+    except oracledb.Error as e:
         print("Database connection failed: {}".format(e))
+        return None
+    except Exception as e:
+        print("Unexpected error connecting to database: {}".format(e))
         return None
 

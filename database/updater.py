@@ -1,5 +1,5 @@
 """Database update operations."""
-import pyodbc
+import cx_Oracle as oracledb
 import logging
 from typing import Dict, List, Tuple, Optional, Union
 from database.queries import SQL_QUERIES, DB_SETTINGS
@@ -31,7 +31,7 @@ class ProcessedReport:
 
 
 class DatabaseUpdater:
-    def __init__(self, connection: pyodbc.Connection):
+    def __init__(self, connection):
         self.connection = connection
         self.cursor = connection.cursor()
                 
@@ -41,8 +41,8 @@ class DatabaseUpdater:
         try:
             if not report_numbers:
                 return {}
-            # Create placeholders for the IN clause
-            placeholders = ','.join(['?' for _ in report_numbers])
+            # Create placeholders for the IN clause - Oracle uses :1, :2, etc.
+            placeholders = ','.join([':{}'.format(i+1) for i in range(len(report_numbers))])
             bulk_query = SQL_QUERIES['SELECT_REPORTS_BULK'].format(placeholders=placeholders)
             
             self.cursor.execute(bulk_query, report_numbers)
@@ -53,7 +53,7 @@ class DatabaseUpdater:
             for row in rows:
                 report_id = row[0]  # report_id is the first column
                 alert_id = row[1]   # alert_id is the second column
-                folder_name = row[2] # Folder_name - need to sent as part of the csv file
+                folder_name = row[2] if len(row) > 2 else None  # SAR_folder_name - may be None
                 result[report_id] = (report_id, alert_id, folder_name)
             
             return result
@@ -317,7 +317,7 @@ class DatabaseUpdater:
             raise
 
 
-def update_db(connection: pyodbc.Connection, reports: Union[Dict, List]) -> str:
+def update_db(connection, reports: Union[Dict, List]) -> str:
     """
     Updates the database with the provided reports using bulk operations.
     

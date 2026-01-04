@@ -63,8 +63,9 @@ class XMLDiagnosePipeline:
         finally:
             # Close database connection
             self.db_manager.close()
-            #close session and logout ActOne
-            end_session(self.alert_updater.session)
+            # Close session and logout ActOne (check if session exists)
+            if self.alert_updater.session:
+                end_session(self.alert_updater.session)
 
             
         
