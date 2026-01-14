@@ -3,27 +3,27 @@
 # SQL Queries - Oracle syntax (using :1, :2, etc. for parameters)
 SQL_QUERIES = {
     'SELECT_REPORT': """
-        SELECT report_id, alert_id 
+        SELECT REPORT_ID, ALERT_ID 
         FROM IMP_REPORT_LOG
-        WHERE report_id = :1
+        WHERE REPORT_ID = :1
     """,
     'SELECT_REPORTS_BULK': """ 
-        SELECT DISTINCT report_id, alert_id, SAR_folder_name
+        SELECT DISTINCT REPORT_ID, ALERT_ID, SAR_FOLDER_NAME
         FROM IMP_REPORT_LOG
-        WHERE report_id IN ({placeholders})
+        WHERE REPORT_ID IN ({placeholders})
     """,
     
     'UPDATE_REPORT_LOG': """
         UPDATE IMP_REPORT_LOG 
-        SET report_date = :1, first_response_valid = :2, final_response_valid = :3, 
-            received_date = :4, mispar_tkina = :5, status_desc = :6 
-        WHERE report_id = :7
+        SET FIRST_RESPONSE_ORIG = :1, FINAL_RESPONSE_VALID = :2, 
+            RECEIVED_DATE = :3, MISPAR_TKINA = :4, STATUS_DESC = :5 
+        WHERE REPORT_ID = :6
     """,
     
     'INSERT_STATUS_TRACKING': """
         INSERT INTO IMP_REPORT_STATUS_TRACKING 
-        (Report_id, alert_id, update_date, status, comments, first_response_valid, final_response_valid)
-        VALUES (:1, :2, :3, :4, :5, :6, :7)
+        (REPORT_ID, ALERT_ID, UPDATE_DATE, TECH_COMMENT, BUSINESS_COMMENT)
+        VALUES (:1, :2, :3, :4, :5)
     """
 }
 

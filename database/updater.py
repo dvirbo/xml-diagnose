@@ -152,22 +152,44 @@ class DatabaseUpdater:
         final_response = processed_report.final_response
         status = processed_report.status
         
-        report_date = first_response.get('ReportDate', '') if first_response else ''
+        # first_response_valid: Convert boolean to CHAR(1) - 'Y'/'N' or '1'/'0'
         first_response_valid = status.get('first_response_valid', False)
+        first_response_orig = 'Y' if first_response_valid else 'N'
+        
+        # final_response_valid: Convert boolean to CHAR(1) - 'Y'/'N' or '1'/'0'
         final_response_valid = status.get('final_response_valid', False)
-        received_date = first_response.get('ReportDate', '') if first_response else ''
+        final_response_valid_char = 'Y' if final_response_valid else 'N'
+        
+        # Use ReportInstanceDate from FirstResponse for received_date
+        # Convert string date to datetime object for Oracle DATE field
+        received_date = None
+        if first_response:
+            date_str = first_response.get('ReportInstanceDate', '')
+            if date_str:
+                try:
+                    from datetime import datetime
+                    # Parse ISO format: 2025-01-02T01:25:55
+                    received_date = datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S')
+                except (ValueError, TypeError) as e:
+                    logging.warning("Could not parse ReportInstanceDate '{}': {}".format(date_str, e))
+                    received_date = None
+        
+        # status_desc: Populated in code based on FIR and FIN response
         status_desc = status.get('status_category', '')
         
-        # Handle mispar_tkina - only exists if final response is valid
+        # mispar_tkina: From FinalResponse/Mivzak/GeneralData/Statuses/Status[@id='']
+        mispar_tkina = None
         if final_response and final_response_valid:
-            mispar_tkina = final_response.get('mispar_tkina', '')
-        else:
-            mispar_tkina = ''  # Empty string if report is not valid or no final response
+            mispar_tkina_str = final_response.get('mispar_tkina', '')
+            if mispar_tkina_str:
+                try:
+                    mispar_tkina = int(mispar_tkina_str)
+                except (ValueError, TypeError):
+                    mispar_tkina = None
         
         return (
-            report_date,
-            first_response_valid,
-            final_response_valid,
+            first_response_orig,
+            final_response_valid_char,
             received_date,
             mispar_tkina,
             status_desc,
@@ -184,24 +206,28 @@ class DatabaseUpdater:
         Returns:
             Tuple of data for INSERT_STATUS_TRACKING
         """
+        from datetime import datetime
+        
         first_response = processed_report.first_response
         final_response = processed_report.final_response
         status = processed_report.status
         
-        update_date = first_response.get('ReportDate', '') if first_response else ''
-        comments = final_response.get('ReportInstanceStatusReason', '') if final_response else ''
-        status_desc = status.get('status_category', '')
-        first_response_valid = status.get('first_response_valid', False)
-        final_response_valid = status.get('final_response_valid', False)
+        # Update_date should be system date (current date/time)
+        # Use datetime object instead of string for Oracle DATE field
+        update_date = datetime.now()
+        
+        # tech_comment from ReportInstanceLegalStatusDesc (FIR)
+        tech_comment = first_response.get('ReportInstanceLegalStatusDesc', '') if first_response else ''
+        
+        # business_comment from ReportInstanceLegalStatusDesc (FIN)
+        business_comment = final_response.get('ReportInstanceLegalStatusDesc', '') if final_response else ''
         
         return (
             processed_report.report_id,
             processed_report.alert_id,
             update_date,
-            status_desc,
-            comments,
-            first_response_valid,
-            final_response_valid
+            tech_comment,
+            business_comment
         )
 
     def _execute_bulk_updates(self, updates_for_report_log: List[Tuple], 

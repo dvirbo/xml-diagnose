@@ -18,8 +18,8 @@ def process_alert(session: requests.Session, report: Dict[str, Any]) -> bool:
         base_url = config["api"]["base_url"]
         alert_id = report['alert_id']
 
-        url = f"{base_url}/v1/work-items/{alert_id}"
-        logging.info(f"Fetching alert data for ID: {alert_id}")
+        url = "{}/v1/work-items/{}".format(base_url, alert_id)
+        logging.info("Fetching alert data for ID: {}".format(alert_id))
 
         # Update alert on server with proper headers
         headers = {"accept": "*/*", "Content-Type": "application/json"}
@@ -38,18 +38,23 @@ def process_alert(session: requests.Session, report: Dict[str, Any]) -> bool:
             ]
         }
 
-        response = session.post(url, json=payload, headers=headers)
+        # Configure SSL verification (same as login)
+        verify_ssl = True
+        if 'ssl' in config and config['ssl']:
+            verify_ssl = config['ssl'].get('verify_ssl', True)
+
+        response = session.post(url, json=payload, headers=headers, verify=verify_ssl)
 
         if response.status_code not in [200, 204]:
-            logging.error(f"Failed to update alert. Status: {response.status_code}")
-            logging.error(f"Response content: {response.text}")
+            logging.error("Failed to update alert. Status: {}".format(response.status_code))
+            logging.error("Response content: {}".format(response.text))
             return False
 
-        logging.info(f"Alert {alert_id} updated successfully with status: {status_category}")
+        logging.info("Alert {} updated successfully with status: {}".format(alert_id, status_category))
         return True
 
     except Exception as e:
-        logging.error(f"Error in process_alert: {str(e)}")
+        logging.error("Error in process_alert: {}".format(str(e)))
         return False
 
 

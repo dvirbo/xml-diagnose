@@ -20,9 +20,10 @@ class ProcessingResult:
 class XMLDiagnosePipeline:
     """Main pipeline for processing XML reports"""
     
-    def __init__(self, input_directory: str):
+    def __init__(self, input_directory: str, date_filter: str = None):
         self.input_directory = input_directory
-        self.xml_processor = XMLReportProcessor(input_directory)
+        self.date_filter = date_filter
+        self.xml_processor = XMLReportProcessor(input_directory, date_filter)
         self.db_manager = DatabaseManager()
         self.alert_updater = AlertUpdater()
     

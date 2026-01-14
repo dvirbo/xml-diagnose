@@ -1,0 +1,42 @@
+
+Required Code Updates:
+a. Folder Structure
+
+Folder Name: Response_From_Rashut_05
+This folder contains two subfolders:
+
+FinalResponses
+FirstResponses
+
+
+All relevant XML data is located within these subfolders.
+
+b. Input Parameter
+
+The input to the main function should be a date in the format: ddmmyyyy.
+
+c. Linking Between XML Files
+
+The field that links the two XML files (one under FirstResponses and one under FinalResponses) is ReportInstanceReference, which exists in each XML file.
+
+d. Data Update Requirements
+
+Update by Report_id (available at /FirstResponse/ReportNumber):
+
+Table: IMP_REPORT_LOG (UPDATE)
+
+first_response_valid → Update based on data from FirstResponse (FIR).
+final_response_valid → Update based on data from FinalResponse (FIN).
+Received_date → Populate from ReportInstanceDate (FIR).
+mispar_tkina → Populate from /FinalResponse/Mivzak/GeneralData/Statuses/Status[@id=''].
+status_desc → Populate in code based on FIR and FIN responses.
+
+Then INSERT based on Report_id & Alert_id fetched:
+Table: IMP_REPORT_STATUS_TRACKING (INSERT)
+
+Report_id
+Alert_id
+Update_date → System date.
+status → Populate in code based on FIR and FIN responses.
+tech_comment → Populate from ReportInstanceLegalStatusDesc (FIR).
+buiss_comment → Populate from ReportInstanceLegalStatusDesc (FIN).

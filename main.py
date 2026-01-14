@@ -1,22 +1,19 @@
 """Main entry point for XML diagnose pipeline."""
 import logging
 import os
+import sys
 from utils.config_loader import load_config
 from utils.logging_setup import setup_logging, cleanup_logs
 from core.pipeline import XMLDiagnosePipeline
 
 
-def get_date_input(prompt="Enter date (dd_mm_yyyy): "):
-    """Get date input from user as string in dd_mm_yyyy format."""
-    while True:
-        date_str = input(prompt).strip()
-        
-        # Check if input is exactly 10 digits
-        if len(date_str) != 10 or not date_str.isdigit():
-            print("Error: Date must be exactly 10 digits in dd_mm_yyyy format")
-            continue
-        
-        return date_str
+def validate_date_format(date_str):
+    """Validate date string is in ddmmyyyy format."""
+    if not date_str:
+        return False
+    if len(date_str) != 8 or not date_str.isdigit():
+        return False
+    return True
 
 
 def main():
@@ -27,17 +24,32 @@ def main():
     # Cleanup old logs
     cleanup_logs()
     
-    # Get date from user
-    #target_date = get_date_input("Enter report date (ddmmyyyy): ") 
-    folder_date_name = '01_01_2025'
+    # Get date from command line argument
+    if len(sys.argv) < 2:
+        print("Error: Date argument is required.")
+        print("Usage: python3 main.py <ddmmyyyy>")
+        print("Example: python3 main.py 01012025")
+        sys.exit(1)
+    
+    folder_date_name = sys.argv[1].strip()
+    
+    # Validate date format
+    if not validate_date_format(folder_date_name):
+        print("Error: Date must be exactly 8 digits in ddmmyyyy format (e.g., 01012025)")
+        sys.exit(1)
+    
     logging.info("Processing reports for date: {}".format(folder_date_name))
     
     # Your main logic here
     logging.info("Starting pipeline process")
     
     config = load_config()
-    input_dir = os.path.join(config.get('reports'), folder_date_name)
-    pipeline = XMLDiagnosePipeline(input_dir)
+    # Input directory (contains FirstResponses/ and FinalResponses/ subfolders)
+    # Input directory is relative to project root
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    input_dir_name = config.get('input_directory', 'Response_From_Rashut_05')
+    input_dir = os.path.join(project_root, input_dir_name)
+    pipeline = XMLDiagnosePipeline(input_dir, date_filter=folder_date_name)
     pipeline.run()
 
 

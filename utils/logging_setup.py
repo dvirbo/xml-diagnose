@@ -33,7 +33,7 @@ def cleanup_logs():
     """Cleanup old log files based on retention policy."""
     config = load_config()
     LOG_DIR = config.get('log_directory', 'logs')
-    RETENTION_DAYS = config.get('retention_days', 90)
+    RETENTION_DAYS = int(config.get('retention_days', 90))
     
     now = datetime.now()
     for filename in os.listdir(LOG_DIR):

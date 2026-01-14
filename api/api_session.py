@@ -3,10 +3,14 @@ import requests
 import json
 import os
 import sys
+import urllib3
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from secure_password_store.password_manager import PasswordManager
+
+# Disable SSL warnings if verify=False is used
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 def load_config():
@@ -34,7 +38,7 @@ def login_and_get_session():
     
     pm = PasswordManager()
     password = pm.get_password(config['credentials']['password_key'])
-    logging.info(f'{config["logging"]["info_messages"]["password_debug"]} {password}')  # For debugging purposes, remove in production
+    logging.info('{} {}'.format(config["logging"]["info_messages"]["password_debug"], password))  # For debugging purposes, remove in production
     
     login_url = config['api']['base_url'] + config['api']['endpoints']['login']
     login_data = {
@@ -43,18 +47,28 @@ def login_and_get_session():
     }
     session = requests.Session()
     
+    # Configure SSL verification
+    verify_ssl = True
+    if 'ssl' in config and config['ssl']:
+        verify_ssl = config['ssl'].get('verify_ssl', True)
+        # Note: Python's requests library doesn't natively support JKS files.
+        # The truststore_path is stored in config for reference, but SSL verification
+        # will use Python's default certificate store or verify=False if disabled.
+        if not verify_ssl:
+            logging.warning("SSL verification is disabled. This is not recommended for production.")
+    
     try:
-        login_response = session.post(login_url, json=login_data)
+        login_response = session.post(login_url, json=login_data, verify=verify_ssl)
         if login_response.status_code != config['http']['success_status_code']:
             error_msg = config['logging']['error_messages']['login_failed']
-            logging.info(f'{error_msg} {login_response.text}')
+            logging.info('{} {}'.format(error_msg, login_response.text))
             session.close()
             return None
         logging.info(config['logging']['info_messages']['login_success'])
         return session
     except Exception as e:
         error_msg = config['logging']['error_messages']['login_failed']
-        print(f'{error_msg} {e}')
+        logging.error('{} {}'.format(error_msg, e))
         session.close()
         return None
     
@@ -78,20 +92,25 @@ def end_session(session):
     logout_url = config['api']['base_url'] + config['api']['endpoints']['logout']
     success_code = config['http']['success_status_code']
     
+    # Configure SSL verification (same as login)
+    verify_ssl = True
+    if 'ssl' in config and config['ssl']:
+        verify_ssl = config['ssl'].get('verify_ssl', True)
+    
     try:
-        logout_response = session.post(logout_url)
+        logout_response = session.post(logout_url, verify=verify_ssl)
         if logout_response.status_code == success_code:
             logging.info(config['logging']['info_messages']['logout_success'])
             session.close()
             return True
         else:
             error_msg = config['logging']['error_messages']['logout_failed']
-            logging.error(f'{error_msg} {logout_response.text}')
+            logging.error('{} {}'.format(error_msg, logout_response.text))
             session.close()
             return False
     except Exception as e:
         error_msg = config['logging']['error_messages']['logout_failed']
-        logging.error(f'{error_msg} {e}')
+        logging.error('{} {}'.format(error_msg, e))
         try:
             session.close()
         except:
@@ -107,3 +126,5 @@ if __name__ == "__main__":
         end_session(session)
     else:
         print(config['main_messages']['session_failed'])
+
+        # /opt/xml-diagnose/api/api_session.py

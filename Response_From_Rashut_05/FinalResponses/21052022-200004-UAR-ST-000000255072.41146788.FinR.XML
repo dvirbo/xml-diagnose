@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FinalResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" DocumentReference="IE55-030272-BNK-2025">
+  <ReportMetaData>
+    <ReportInstanceReference>41146788</ReportInstanceReference>
+    <ReportNumber>000000255072</ReportNumber>
+    <ReportDate>2022-05-21</ReportDate>
+    <ReportInstanceDate>2022-05-21T20:26:11.917</ReportInstanceDate>
+    <ReportInstanceStatusSeq>13</ReportInstanceStatusSeq>
+    <ReportInstanceLegalStatusSeq>6</ReportInstanceLegalStatusSeq>
+    <ReportInstanceLegalStatusDesc>תקין</ReportInstanceLegalStatusDesc>
+    <SourceTypeSeq>1</SourceTypeSeq>
+    <SourceSeq>979705</SourceSeq>
+    <SourceId>20</SourceId>
+    <IsCorrectionReport>false</IsCorrectionReport>
+    <SourceName>מזרחי טפחות בע"מ</SourceName>
+    <ErrorsCount>0</ErrorsCount>
+    <MivzakErrorsCount>0</MivzakErrorsCount>
+  </ReportMetaData>
+  <ErrorReport />
+  <Mivzak>
+    <GeneralData xmlns="http://www.justice.gov.il/IMPA/RLS/Flash/Responses">
+      <ReportNumber>000000255072</ReportNumber>
+      <ReportFileName>20_01.00_0825.000000255072.zip</ReportFileName>
+      <SourceId>20</SourceId>
+      <SourceName>מזרחי טפחות בעמ</SourceName>
+      <ReportFlashSeq>923685</ReportFlashSeq>
+      <Statuses>
+        <Status id="4294967296" name="עבר בדיקות ואלידציה - מבזק תקין" />
+      </Statuses>
+    </GeneralData>
+    <ErrorReport xmlns="http://www.justice.gov.il/IMPA/RLS/Flash/Responses" />
+  </Mivzak>
+</FinalResponse>

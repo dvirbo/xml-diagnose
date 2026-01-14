@@ -13,13 +13,13 @@ FIRST_STATUS_OK = "קבצים תקינים"
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
-def parse_xml_files(directory: str) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
+def parse_xml_files(directory: str, date_filter: str = None) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
     """
-    Parses XML files in the specified directory and extracts the relevant information from files with root tags
-    "FirstResponse" and "FinalResponse".
+    Parses XML files from FirstResponses/ and FinalResponses/ subfolders.
     
     Args:
-        directory (str): The path to the directory containing XML files.
+        directory (str): The path to Response_From_Rashut_05 directory containing FirstResponses/ and FinalResponses/ subfolders.
+        date_filter (str): Optional date prefix (ddmmyyyy) to filter files by filename. Files must start with this date.
         
     Returns:
         tuple: A tuple containing two dictionaries:
@@ -27,7 +27,7 @@ def parse_xml_files(directory: str) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
             - final_responses (dict): Maps ReportNumber to extracted data from FinalResponse files
             
     Raises:
-        FileNotFoundError: If the directory doesn't exist
+        FileNotFoundError: If the directory or subfolders don't exist
         ET.ParseError: If XML files are malformed
     """
     if not os.path.exists(directory):
@@ -35,29 +35,60 @@ def parse_xml_files(directory: str) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
 
     first_responses: Dict[str, Any] = {}
     final_responses: Dict[str, Any] = {}
-
-    # Get all XML files at once
-    xml_files = [f for f in os.listdir(directory) if f.upper().endswith(".XML")]
     
-    for filename in xml_files:
-        file_path = os.path.join(directory, filename)
-        
-        try:
-            tree = ET.parse(file_path)
-            root = tree.getroot()
-        except ET.ParseError as e:
-            logging.warning("Could not parse {}: {}".format(filename, e))
-            continue
-        except Exception as e:
-            logging.error("Unexpected error parsing {}: {}".format(filename, e))
-            continue
-
-        if root.tag == FIRST_RESPONSE_TAG:
-            first_responses.update(_parse_first_response(root))
-        elif root.tag == FINAL_RESPONSE_TAG:
-            final_responses.update(_parse_final_response(root))
-        else:
-            logging.debug("Skipping {}: Unknown root tag '{}'".format(filename, root.tag))
+    # Define subfolder paths
+    first_responses_dir = os.path.join(directory, 'FirstResponses')
+    final_responses_dir = os.path.join(directory, 'FinalResponses')
+    
+    # Parse FirstResponse XML files
+    if os.path.exists(first_responses_dir):
+        xml_files = [f for f in os.listdir(first_responses_dir) if f.upper().endswith(".XML")]
+        # Filter by date prefix if provided
+        if date_filter:
+            xml_files = [f for f in xml_files if f.startswith(date_filter)]
+            logging.info("Filtered FirstResponse files by date {}: {} files found".format(date_filter, len(xml_files)))
+        for filename in xml_files:
+            file_path = os.path.join(first_responses_dir, filename)
+            try:
+                tree = ET.parse(file_path)
+                root = tree.getroot()
+                if root.tag == FIRST_RESPONSE_TAG:
+                    first_responses.update(_parse_first_response(root))
+                else:
+                    logging.debug("Skipping {}: Expected FirstResponse, got '{}'".format(filename, root.tag))
+            except ET.ParseError as e:
+                logging.warning("Could not parse {}: {}".format(filename, e))
+                continue
+            except Exception as e:
+                logging.error("Unexpected error parsing {}: {}".format(filename, e))
+                continue
+    else:
+        logging.warning("FirstResponses directory not found: {}".format(first_responses_dir))
+    
+    # Parse FinalResponse XML files
+    if os.path.exists(final_responses_dir):
+        xml_files = [f for f in os.listdir(final_responses_dir) if f.upper().endswith(".XML")]
+        # Filter by date prefix if provided
+        if date_filter:
+            xml_files = [f for f in xml_files if f.startswith(date_filter)]
+            logging.info("Filtered FinalResponse files by date {}: {} files found".format(date_filter, len(xml_files)))
+        for filename in xml_files:
+            file_path = os.path.join(final_responses_dir, filename)
+            try:
+                tree = ET.parse(file_path)
+                root = tree.getroot()
+                if root.tag == FINAL_RESPONSE_TAG:
+                    final_responses.update(_parse_final_response(root))
+                else:
+                    logging.debug("Skipping {}: Expected FinalResponse, got '{}'".format(filename, root.tag))
+            except ET.ParseError as e:
+                logging.warning("Could not parse {}: {}".format(filename, e))
+                continue
+            except Exception as e:
+                logging.error("Unexpected error parsing {}: {}".format(filename, e))
+                continue
+    else:
+        logging.warning("FinalResponses directory not found: {}".format(final_responses_dir))
 
     return first_responses, final_responses
 
@@ -76,6 +107,7 @@ def _parse_first_response(root) -> Dict[str, Dict]:
     return { 
         report_number: {
             "ReportDate": _safe_get_text(root, "ReportDate"),
+            "ReportInstanceDate": _safe_get_text(root, "ReportInstanceDate"),
             "ReportInstanceReference": _safe_get_text(root, "ReportInstanceReference"),
             "ReportInstanceLegalStatusDesc": valid_status,
             "valid": is_valid,

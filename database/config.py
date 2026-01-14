@@ -9,7 +9,7 @@ DB_CONFIG = {
     'PORT': _db_config['PORT'],
     'SERVICE_NAME': _db_config['SERVICE_NAME'],
     'USERNAME': _db_config['USERNAME'],
-    'PASSWORD': _db_config['PASSWORD']
+    'PASSWORD_KEY': _db_config['PASSWORD_KEY']  # Changed to password_key
 }
 
 # Database settings

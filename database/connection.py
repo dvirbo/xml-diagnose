@@ -11,9 +11,12 @@ def connect_to_database():
     username/password@host:port/service_name
     """
     try:
-        # Use password from config directly
-        # Note: We skip secure storage for Oracle since credentials are in config
-        password = DB_CONFIG['PASSWORD']
+        # Retrieve password using PasswordManager
+        pm = PasswordManager()
+        password = pm.get_password(DB_CONFIG['PASSWORD_KEY'])
+        
+        if not password:
+            raise ValueError("Failed to retrieve database password using key: {}".format(DB_CONFIG['PASSWORD_KEY']))
         
         # Use Easy Connect String format (same as sqlplus command line)
         # Format: username/password@host:port/service_name

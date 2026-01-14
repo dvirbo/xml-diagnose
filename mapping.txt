@@ -1,30 +1,28 @@
-IMP_REPORT_LOG:
+IMP_REPORT_LOG (UPDATE):
 
 UPDATE by Report_id  &  Alert_id : 
 
-Report_id   -->   exist before, is it the same as  ReportNumer (FIR) 
-Alert_id  --> (exist before)
-Report_date  -->      ReportDate (FIR)
-status   --> seperate method that make AND with both tech and buiss
-tech_comment  -->  ReportInstanceStatusReason (FIR)
-Buiss_comment ->> ReportInstanceLegalStatusSeq (FIN)
-Received_date  -->  ?? ReportInstanceDate  (FIN) ??
-mispar_tkina  --> (waiting for update)
-SAR_folder_name --> exist before
+report_id  
+Alert_id  
+report_date_orig   
+report_date_updated 
+first_response_valid  --> need to update the field based on the data (FIR)
+final_response_valid  -->  need to update the field based on the data (FIN )
+Received_date --> ReportInstanceDate (FIR)
+mispar_tkina -->  /FinalResponse/Mivzak/GeneralData/Statuses/Status[@id='']
+SAR_folder_name   
+status_desc -->  in the code, we will populate this field based on the FIR and FIN response
 
 
-IMP_REPORT_SATUS_TRACKING:
+then INSERT based on the Report_id  &  Alert_id  that we fetch:
+
+IMP_REPORT_SATUS_TRACKING (INSERT):
 
 Report_id 
-Alert_id  --> getting this from 
-Update_date  --> ReportInstanceDate   (FIN)
-status   --> seperate method that make AND with both tech and buiss
-tech_comment  --> ReportInstanceLegalStatusId (FIR) (check by that..)
-Buiss_comment ->>ReportInstanceLegalStatusSeq (FIN)
+Alert_id  
+Update_date  --> sys date
+status   --> in the code, we will populate this field based on the FIR and FIN response
+tech_comment  --> ReportInstanceLegalStatusDesc (FIR) 
+Buiss_comment -> ReportInstanceLegalStatusDesc (FIN)
 
 
-  <ReportInstanceStatusId>7</ReportInstanceStatusId>
-  <ReportInstanceLegalStatusId>3</ReportInstanceLegalStatusId>
-final:
-    <ReportInstanceStatusSeq>13</ReportInstanceStatusSeq>
-    <ReportInstanceLegalStatusSeq>6</ReportInstanceLegalStatusSeq>

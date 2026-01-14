@@ -62,7 +62,8 @@ def load_config():
 def get_database_config():
     """
     Get database configuration as a dictionary.
-    Returns dict with keys: HOST, PORT, SERVICE_NAME, USERNAME, PASSWORD, BATCH_SIZE, TIMEOUT
+    Returns dict with keys: HOST, PORT, SERVICE_NAME, USERNAME, PASSWORD_KEY, BATCH_SIZE, TIMEOUT
+    Note: PASSWORD_KEY is the key to retrieve password from PasswordManager, not the password itself.
     """
     config = _load_config_parser()
     db_section = config['database']
@@ -72,7 +73,7 @@ def get_database_config():
         'PORT': db_section.get('port'),
         'SERVICE_NAME': db_section.get('service_name'),
         'USERNAME': db_section.get('username'),
-        'PASSWORD': db_section.get('password'),
+        'PASSWORD_KEY': db_section.get('password_key'),  # Changed to password_key
         'BATCH_SIZE': db_section.getint('batch_size', fallback=1000),
         'TIMEOUT': db_section.getint('timeout', fallback=30)
     }
@@ -83,6 +84,15 @@ def get_api_config():
     Get API configuration as a dictionary (compatible with old api_config.json structure).
     """
     config = _load_config_parser()
+    
+    # Get SSL configuration if available
+    ssl_config = {}
+    if config.has_section('ssl'):
+        ssl_config = {
+            'truststore_path': config.get('ssl', 'truststore_path', fallback=''),
+            'truststore_password_key': config.get('ssl', 'truststore_password_key', fallback=''),  # Changed to password_key
+            'verify_ssl': config.getboolean('ssl', 'verify_ssl', fallback=True)
+        }
     
     return {
         'api': {
@@ -96,6 +106,7 @@ def get_api_config():
             'username': config.get('credentials', 'username'),
             'password_key': config.get('credentials', 'password_key')
         },
+        'ssl': ssl_config,
         'logging': {
             'info_messages': {
                 'login_success': config.get('logging', 'login_success'),

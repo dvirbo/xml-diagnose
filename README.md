@@ -30,7 +30,6 @@ xml-diagnose/
 │   └── queries.py               # SQL queries
 ├── api/                         # API modules for alert updates
 ├── secure_password_store/       # Password encryption/decryption
-├── soap/                        # SOAP service modules (optional)
 └── reports/                     # Input XML reports directory
 ```
 
