@@ -24,6 +24,12 @@ SQL_QUERIES = {
         INSERT INTO IMP_REPORT_STATUS_TRACKING 
         (REPORT_ID, ALERT_ID, UPDATE_DATE, TECH_COMMENT, BUSINESS_COMMENT)
         VALUES (:1, :2, :3, :4, :5)
+    """,
+    
+    'UPDATE_ALERT': """
+        UPDATE actone.alerts 
+        SET p17 = :1, p18 = :2, p19 = :3 
+        WHERE alert_id = :4
     """
 }
 

@@ -3,6 +3,7 @@ import cx_Oracle as oracledb
 import logging
 from typing import Dict, List, Tuple, Optional, Union
 from database.queries import SQL_QUERIES, DB_SETTINGS
+from database.connection import connect_to_alerts_database
 
 
 class ReportUpdate:
@@ -229,15 +230,78 @@ class DatabaseUpdater:
             tech_comment,
             business_comment
         )
+    
+    def _prepare_alert_update(self, processed_report: ProcessedReport) -> Optional[Tuple]:
+        """
+        Prepare data for UPDATE_ALERT query.
+        
+        Args:
+            processed_report: ProcessedReport object
+            
+        Returns:
+            Tuple of (p17, p18, p19, alert_id) or None if alert_id is missing
+        """
+        if not processed_report.alert_id:
+            logging.warning("Alert update skipped for report {}: alert_id is missing".format(processed_report.report_number))
+            return None
+        
+        status = processed_report.status
+        final_response = processed_report.final_response
+        
+        # Log raw data for debugging
+        logging.debug("Preparing alert update for report {}, alert_id {}".format(
+            processed_report.report_number, processed_report.alert_id))
+        logging.debug("Status data: {}".format(status))
+        logging.debug("Final response data: {}".format(final_response))
+        
+        # p17 = status_divuah (status_category)
+        p17 = status.get('status_category', '')
+        logging.debug("p17 (status_category): '{}'".format(p17))
+        
+        # p18 = Mispar_tkina (from FinalResponse, as string for VARCHAR2(50))
+        p18 = ''
+        if final_response:
+            mispar_tkina_raw = final_response.get('mispar_tkina', '')
+            logging.debug("mispar_tkina from final_response: '{}' (type: {})".format(
+                mispar_tkina_raw, type(mispar_tkina_raw).__name__))
+            
+            if mispar_tkina_raw:
+                p18 = str(mispar_tkina_raw)
+                logging.debug("p18 (Mispar_tkina) set to: '{}'".format(p18))
+            else:
+                logging.warning("mispar_tkina is empty or missing in final_response for report {}".format(
+                    processed_report.report_number))
+        else:
+            logging.warning("Final response is None for report {}".format(processed_report.report_number))
+        
+        # p19 = Mispar_divuah (report_number without leading zeros)
+        p19 = processed_report.report_number.lstrip('0') or '0'
+        logging.debug("p19 (Mispar_divuah) from report_number '{}': '{}'".format(
+            processed_report.report_number, p19))
+        
+        # Ensure all values are strings and max 50 chars for VARCHAR2(50)
+        p17 = str(p17)[:50] if p17 else ''
+        p18 = str(p18)[:50] if p18 else ''
+        p19 = str(p19)[:50] if p19 else ''
+        
+        # Log final values being sent to database
+        logging.info("Alert update prepared for alert_id {}: p17='{}', p18='{}', p19='{}'".format(
+            processed_report.alert_id, p17, p18, p19))
+        
+        return (p17, p18, p19, processed_report.alert_id)
 
     def _execute_bulk_updates(self, updates_for_report_log: List[Tuple], 
-                             updates_for_status_tracking: List[Tuple]) -> None:
+                             updates_for_status_tracking: List[Tuple],
+                             updates_for_alerts: List[Tuple] = None,
+                             alerts_connection = None) -> None:
         """
         Execute bulk database updates.
         
         Args:
             updates_for_report_log: List of tuples for UPDATE_REPORT_LOG
             updates_for_status_tracking: List of tuples for INSERT_STATUS_TRACKING
+            updates_for_alerts: List of tuples for UPDATE_ALERT
+            alerts_connection: Connection to alerts database (optional)
         """
         # Update IMP_REPORT_LOG
         if updates_for_report_log:
@@ -256,6 +320,36 @@ class DatabaseUpdater:
             except Exception as e:
                 logging.error("Error inserting into IMP_REPORT_STATUS_TRACKING: {}".format(e))
                 raise
+        
+        # Update ALERTS table (if alerts connection provided)
+        # Note: Committed separately after main transaction (per requirement: same transaction conceptually, but different DB users)
+        if updates_for_alerts and alerts_connection:
+            try:
+                # Log details of what we're about to update
+                for idx, update_tuple in enumerate(updates_for_alerts[:5]):  # Log first 5 for debugging
+                    logging.debug("Alert update #{}: p17='{}', p18='{}', p19='{}', alert_id='{}'".format(
+                        idx + 1, update_tuple[0], update_tuple[1], update_tuple[2], update_tuple[3]))
+                
+                alerts_cursor = alerts_connection.cursor()
+                alerts_cursor.executemany(SQL_QUERIES['UPDATE_ALERT'], updates_for_alerts)
+                logging.info("Updated {} records in actone.alerts".format(len(updates_for_alerts)))
+                
+                # Log rowcount to verify updates
+                logging.debug("Alert updates executed. Rows affected: {}".format(alerts_cursor.rowcount))
+                
+                # Note: Commit will be done after main connection commit
+            except Exception as e:
+                logging.error("Error updating actone.alerts: {}".format(e))
+                import traceback
+                logging.error("Traceback: {}".format(traceback.format_exc()))
+                # Log warning and continue (per requirement - don't raise, just log)
+                logging.warning("Continuing despite alert update errors")
+                if alerts_connection:
+                    try:
+                        alerts_connection.rollback()
+                    except:
+                        pass
+                # Don't raise - allow main transaction to proceed
 
     def update_database_bulk(self, reports: Union[Dict, List]) -> None:
         """
@@ -294,10 +388,20 @@ class DatabaseUpdater:
             # Step 2: Process reports and prepare updates
             updates_for_report_log = []
             updates_for_status_tracking = []
+            updates_for_alerts = []
             
             processed_count = 0
             missing_count = 0
             failed_count = 0
+            
+            # Connect to alerts database
+            alerts_connection = None
+            try:
+                alerts_connection = connect_to_alerts_database()
+                if not alerts_connection:
+                    logging.warning("Failed to connect to alerts database. Alert updates will be skipped.")
+            except Exception as e:
+                logging.warning("Error connecting to alerts database: {}. Alert updates will be skipped.".format(e))
             
             for report_number, report_data in reports_items:
                 logging.debug("Processing report {}".format(report_number))
@@ -315,9 +419,18 @@ class DatabaseUpdater:
                     # Prepare update data
                     report_log_update = self._prepare_report_log_update(processed_report)
                     status_tracking_insert = self._prepare_status_tracking_insert(processed_report)
+                    alert_update = self._prepare_alert_update(processed_report)
                     
                     updates_for_report_log.append(report_log_update)
                     updates_for_status_tracking.append(status_tracking_insert)
+                    
+                    if alert_update:
+                        updates_for_alerts.append(alert_update)
+                        # Log the actual values being added to batch
+                        logging.debug("Added alert update to batch: p17='{}', p18='{}', p19='{}', alert_id='{}'".format(
+                            alert_update[0], alert_update[1], alert_update[2], alert_update[3]))
+                    else:
+                        logging.warning("Skipping alert update for report {}: alert_id is missing".format(report_number))
                     
                     processed_count += 1
                     logging.debug("Successfully prepared updates for report {}".format(report_number))
@@ -327,13 +440,40 @@ class DatabaseUpdater:
                     logging.error("Error preparing updates for report {}: {}".format(report_number, e))
             
             logging.info("Processed {} reports, {} missing from DB, {} failed".format(processed_count, missing_count, failed_count))
+            logging.info("Prepared {} alert updates".format(len(updates_for_alerts)))
             
-            # Step 3: Execute bulk updates
-            self._execute_bulk_updates(updates_for_report_log, updates_for_status_tracking)
+            # Step 3: Execute bulk updates (including alerts if connection available)
+            self._execute_bulk_updates(
+                updates_for_report_log, 
+                updates_for_status_tracking,
+                updates_for_alerts if alerts_connection else None,
+                alerts_connection
+            )
             
-            # Step 4: Commit the transaction
+            # Step 4: Commit the main transaction
             self.connection.commit()
             logging.info("Database update completed successfully. Updated {} reports.".format(processed_count))
+            
+            # Step 5: Commit alerts transaction (after main transaction succeeds)
+            if alerts_connection and updates_for_alerts:
+                try:
+                    alerts_connection.commit()
+                    logging.info("Alert updates committed successfully")
+                except Exception as e:
+                    logging.error("Failed to commit alerts transaction: {}".format(e))
+                    # Continue anyway (per requirement)
+                    try:
+                        alerts_connection.rollback()
+                    except:
+                        pass
+            
+            # Close alerts connection if opened
+            if alerts_connection:
+                try:
+                    alerts_connection.close()
+                except Exception as e:
+                    logging.warning("Error closing alerts connection: {}".format(e))
+            
             return reports
             
         except Exception as e:

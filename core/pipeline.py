@@ -1,8 +1,6 @@
 """Main pipeline for processing XML reports."""
 import logging
 from typing import List, Dict, Optional
-from api.alert_updater import AlertUpdater
-from api.api_session import end_session
 from database.manager import DatabaseManager
 from processors.xml_processor import XMLReportProcessor
 
@@ -25,7 +23,6 @@ class XMLDiagnosePipeline:
         self.date_filter = date_filter
         self.xml_processor = XMLReportProcessor(input_directory, date_filter)
         self.db_manager = DatabaseManager()
-        self.alert_updater = AlertUpdater()
     
     def run(self) -> ProcessingResult:
         """Execute the complete processing pipeline"""
@@ -40,20 +37,15 @@ class XMLDiagnosePipeline:
             
             #TODO: add a method that send the csv to the Rashut via email
             
-            # Step 3: Update database
+            # Step 3: Update database (includes report log, status tracking, and alerts)
             if self.db_manager.connect():
                 # Convert to lists if they're dictionaries, or use as-is if already lists
                 all_reports = result.reports if isinstance(result.reports, list) else [result.reports] if result.reports else []
-                result.summary_reports = self.db_manager.update_reports(all_reports) #TODO: remove the comment when the db_manager is ready
+                result.summary_reports = self.db_manager.update_reports(all_reports)
+                # Note: Alert updates are now handled within the database update process
             else:
                 logging.error("Skipping database update due to connection failure")
                 return result
-            
-            # Step 4: Update alerts
-            if self.alert_updater.initialize_session():
-                self.alert_updater.update_alerts(all_reports)
-            else:
-                logging.error("Skipping alert updates due to session failure")
             
             logging.info("Pipeline execution completed successfully")
             
@@ -64,11 +56,6 @@ class XMLDiagnosePipeline:
         finally:
             # Close database connection
             self.db_manager.close()
-            # Close session and logout ActOne (check if session exists)
-            if self.alert_updater.session:
-                end_session(self.alert_updater.session)
-
-            
         
         return result
 

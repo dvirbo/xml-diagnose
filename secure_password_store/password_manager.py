@@ -108,36 +108,15 @@ class PasswordManager:
 
 # Example usage and testing:
 def test_password_manager():
-    # pm = PasswordManager()
-    
-    # # Test 1: Add passwords
-    # print("=== Testing Password Addition ===")
-    # pm.add_password("gmail", "mypassword123")
-    # pm.add_password("facebook", "fb_password456")
-    
-    # # Test 2: Try to add duplicate identifier
-    # print("\n=== Testing Duplicate Identifier ===")
-    # pm.add_password("gmail", "different_password")  # Should fail
-    
-    # # Test 3: Retrieve passwords
-    # print("\n=== Testing Password Retrieval ===")
-    # retrieved1 = pm.get_password("gmail")
-    # retrieved2 = pm.get_password("facebook")
-    # print(f"Gmail password: {retrieved1}")
-    # print(f"Facebook password: {retrieved2}")
-    
-    # # Test 4: Try to retrieve non-existent password
-    # print("\n=== Testing Non-existent Password ===")
-    # retrieved3 = pm.get_password("nonexistent")
-    
-    # # Test 5: Create new instance to test persistence
-    # print("\n=== Testing Persistence (New Instance) ===")
-    pm2 = PasswordManager()
-    retrieved4 = pm2.get_password("ActOne")
-    print(f"Gmail password from new instance: {retrieved4}")
-    
+    pm = PasswordManager()
+    pm.add_password("custom", "IfsOra123")
+    pm.add_password("actone", "ActOne123")
+    retrieved1 = pm.get_password("custom")
+    retrieved2 = pm.get_password("actone")
+    print(f"custom password: {retrieved1}")
+    print(f"actone password: {retrieved2}")
+
 if __name__ == "__main__":
     test_password_manager()
     
     
- # /opt/xml-diagnose/secure_password_store

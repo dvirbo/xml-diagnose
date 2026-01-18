@@ -138,16 +138,25 @@ def _parse_final_response(root) -> Dict[str, Dict]:
         "valid": is_valid
     }
     
+    # Always try to extract mispar_tkina, regardless of validity
+    mispar_tkina_value = _safe_get_text(root, "Mivzak/GeneralData/Statuses/Status/@id")
+    logging.debug("Extracted mispar_tkina from XML for report {}: '{}' (is_valid={})".format(
+        report_number, mispar_tkina_value, is_valid))
+    
     if is_valid:
         data.update({
             "ReportInstanceStatusReason": "",
-            "mispar_tkina": _safe_get_text(root, "Mivzak/GeneralData/Statuses/Status/@id")
+            "mispar_tkina": mispar_tkina_value
         })
     else:
         data.update({
             "ReportInstanceStatusReason": _safe_get_text(root, "ReportMetaData/ReportInstanceStatusReason"),
-            "ErrorCode": error_code
+            "ErrorCode": error_code,
+            "mispar_tkina": mispar_tkina_value  # Include mispar_tkina even for invalid responses
         })
+    
+    logging.debug("FinalResponse data for report {}: mispar_tkina='{}', valid={}".format(
+        report_number, data.get('mispar_tkina', ''), is_valid))
     
     return {report_number: data}
 
@@ -155,6 +164,7 @@ def _parse_final_response(root) -> Dict[str, Dict]:
 def _safe_get_text(element: ET.Element, xpath: str) -> str:
     """
     Safely extracts text from an XML element using XPath, returning empty string if not found.
+    Handles XML namespaces properly.
     
     Args:
         element: The XML element to search in
@@ -163,14 +173,75 @@ def _safe_get_text(element: ET.Element, xpath: str) -> str:
     Returns:
         str: The text content of the found element, or empty string if not found
     """
+    # Namespace for Mivzak/GeneralData elements
+    namespace = {'ns': 'http://www.justice.gov.il/IMPA/RLS/Flash/Responses'}
+    
+    # Check if this path involves namespaced elements (GeneralData and its children are namespaced)
+    needs_namespace = 'GeneralData' in xpath
+    
     if xpath.endswith("/@id"):
         # Handle attribute extraction
         attr_xpath = xpath[:-4]  # Remove /@id
-        found_element = element.find(attr_xpath)
-        return found_element.get("id", "") if found_element is not None else ""
+        
+        if needs_namespace:
+            # Convert path like "Mivzak/GeneralData/Statuses/Status" to namespace-aware
+            # Mivzak is not namespaced, but GeneralData and children are
+            parts = attr_xpath.split('/')
+            ns_path_parts = []
+            for part in parts:
+                if part == 'Mivzak':
+                    ns_path_parts.append(part)
+                elif part in ['GeneralData', 'Statuses', 'Status', 'ErrorReport']:
+                    # These elements are in the namespace
+                    ns_path_parts.append('ns:{}'.format(part))
+                else:
+                    ns_path_parts.append(part)
+            
+            # Build the namespace-aware path
+            # If starting from root, use absolute path; otherwise use relative
+            if attr_xpath.startswith('Mivzak'):
+                ns_path = '/'.join(ns_path_parts)
+            else:
+                ns_path = './/' + '/'.join(ns_path_parts)
+            
+            logging.debug("Looking for attribute with namespaced path: {}".format(ns_path))
+            found_element = element.find(ns_path, namespace)
+            result = found_element.get("id", "") if found_element is not None else ""
+            logging.debug("Found element: {}, result: '{}'".format(found_element is not None, result))
+            return result
+        else:
+            found_element = element.find(attr_xpath)
+            return found_element.get("id", "") if found_element is not None else ""
     
-    found_element = element.find(xpath)
-    return found_element.text.strip() if found_element is not None and found_element.text else ""
+    # For text extraction
+    if needs_namespace:
+        # Convert path to namespace-aware
+        parts = xpath.split('/')
+        ns_path_parts = []
+        for part in parts:
+            if part == 'Mivzak':
+                ns_path_parts.append(part)
+            elif part in ['GeneralData', 'Statuses', 'Status', 'ErrorReport', 'ReportNumber', 'ReportFileName', 
+                          'SourceId', 'SourceName', 'ReportFlashSeq']:
+                # These elements are in the namespace
+                ns_path_parts.append('ns:{}'.format(part))
+            else:
+                ns_path_parts.append(part)
+        
+        # Build the namespace-aware path
+        if xpath.startswith('Mivzak'):
+            ns_path = '/'.join(ns_path_parts)
+        else:
+            ns_path = './/' + '/'.join(ns_path_parts)
+        
+        logging.debug("Looking for text with namespaced path: {}".format(ns_path))
+        found_element = element.find(ns_path, namespace)
+        result = found_element.text.strip() if found_element is not None and found_element.text else ""
+        logging.debug("Found element: {}, result: '{}'".format(found_element is not None, result))
+        return result
+    else:
+        found_element = element.find(xpath)
+        return found_element.text.strip() if found_element is not None and found_element.text else ""
 
 
 def link_responses(first_responses: Dict[str, Dict], 

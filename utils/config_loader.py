@@ -79,6 +79,33 @@ def get_database_config():
     }
 
 
+def get_alerts_db_config():
+    """
+    Get alerts database configuration as a dictionary.
+    Returns dict with keys: HOST, PORT, SERVICE_NAME, USERNAME, PASSWORD_KEY
+    Note: PASSWORD_KEY is the key to retrieve password from PasswordManager, not the password itself.
+    Inherits common settings (host, port, service_name) from [database] section.
+    """
+    config = _load_config_parser()
+    
+    # Get base database config for common settings
+    db_config = get_database_config()
+    
+    # Get alerts_db specific settings
+    if not config.has_section('alerts_db'):
+        raise ValueError("Configuration section 'alerts_db' not found in config.ini")
+    
+    alerts_db_section = config['alerts_db']
+    
+    return {
+        'HOST': alerts_db_section.get('host') or db_config['HOST'],  # Use alerts_db value if provided, else inherit from database
+        'PORT': alerts_db_section.get('port') or db_config['PORT'],
+        'SERVICE_NAME': alerts_db_section.get('service_name') or db_config['SERVICE_NAME'],
+        'USERNAME': alerts_db_section.get('username'),
+        'PASSWORD_KEY': alerts_db_section.get('password_key')
+    }
+
+
 def get_api_config():
     """
     Get API configuration as a dictionary (compatible with old api_config.json structure).
