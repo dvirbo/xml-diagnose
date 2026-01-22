@@ -1,7 +1,8 @@
 """XML parsing utilities for FirstResponse and FinalResponse XML files."""
 import os
+import re
 import logging
-from typing import Dict, Tuple, Any, List
+from typing import Dict, Tuple, Any, List, Set, Optional
 import xml.etree.ElementTree as ET
 
 # Constants
@@ -13,13 +14,38 @@ FIRST_STATUS_OK = "קבצים תקינים"
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
-def parse_xml_files(directory: str, date_filter: str = None) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
+def _extract_report_number_from_filename(filename: str) -> Optional[int]:
+    """
+    Extract report_number from XML filename.
+    Filename format: ReportDate-?-UAR-ST-ReportNumber-ReportInstanceReference.FinR.XML
+    Example: 01012025-200005-UAR-ST-000000251531.41077558.FinR.XML
+    
+    Args:
+        filename: The XML filename
+        
+    Returns:
+        report_number as integer, or None if not found
+    """
+    # Pattern: UAR-ST- followed by digits, then a dot
+    # Match: UAR-ST-000000251531.41077558
+    match = re.search(r'UAR-ST-(\d+)\.', filename)
+    if match:
+        try:
+            return int(match.group(1))
+        except ValueError:
+            return None
+    return None
+
+
+def parse_xml_files(directory: str, date_filter: str = None, allowed_report_ids: Set[int] = None) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
     """
     Parses XML files from FirstResponses/ and FinalResponses/ subfolders.
+    Filters files by report_number in filename BEFORE parsing if allowed_report_ids is provided.
     
     Args:
         directory (str): The path to Response_From_Rashut_05 directory containing FirstResponses/ and FinalResponses/ subfolders.
         date_filter (str): Optional date prefix (ddmmyyyy) to filter files by filename. Files must start with this date.
+        allowed_report_ids (set): Optional set of report_id values (as integers) to filter by. Only files with matching report_number in filename will be parsed.
         
     Returns:
         tuple: A tuple containing two dictionaries:
@@ -47,6 +73,16 @@ def parse_xml_files(directory: str, date_filter: str = None) -> Tuple[Dict[str, 
         if date_filter:
             xml_files = [f for f in xml_files if f.startswith(date_filter)]
             logging.info("Filtered FirstResponse files by date {}: {} files found".format(date_filter, len(xml_files)))
+        
+        # Filter by report_id BEFORE parsing if allowed_report_ids is provided
+        filtered_count = 0
+        if allowed_report_ids is not None:
+            original_count = len(xml_files)
+            xml_files = [f for f in xml_files if _extract_report_number_from_filename(f) in allowed_report_ids]
+            filtered_count = original_count - len(xml_files)
+            if filtered_count > 0:
+                logging.info("Filtered out {} FirstResponse files not matching allowed report_ids (before parsing)".format(filtered_count))
+        
         for filename in xml_files:
             file_path = os.path.join(first_responses_dir, filename)
             try:
@@ -72,6 +108,16 @@ def parse_xml_files(directory: str, date_filter: str = None) -> Tuple[Dict[str, 
         if date_filter:
             xml_files = [f for f in xml_files if f.startswith(date_filter)]
             logging.info("Filtered FinalResponse files by date {}: {} files found".format(date_filter, len(xml_files)))
+        
+        # Filter by report_id BEFORE parsing if allowed_report_ids is provided
+        filtered_count = 0
+        if allowed_report_ids is not None:
+            original_count = len(xml_files)
+            xml_files = [f for f in xml_files if _extract_report_number_from_filename(f) in allowed_report_ids]
+            filtered_count = original_count - len(xml_files)
+            if filtered_count > 0:
+                logging.info("Filtered out {} FinalResponse files not matching allowed report_ids (before parsing)".format(filtered_count))
+        
         for filename in xml_files:
             file_path = os.path.join(final_responses_dir, filename)
             try:

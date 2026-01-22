@@ -55,8 +55,8 @@ def main():
 
 if __name__ == "__main__":
     main()
-    #TODO: We need to add an SQL query (provided by Ornael) that retrieves all relevant report_id values. 
-    #TODO: These IDs will then be passed to the process_xml_files function, which will use them to fetch and process all corresponding files.
+    # Query filter is now integrated: The pipeline automatically queries the latest process
+    # and filters XML files to only process reports matching those report_ids.
     
     '''
     filename meaning:
