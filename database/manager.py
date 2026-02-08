@@ -86,16 +86,19 @@ class DatabaseManager:
             return set()
     
     def update_reports(self, reports: List) -> List[Dict]:
-        """Update database with reports and return summary"""
-        if not self.connection:
-            logging.error("No database connection available")
-            return []
-        
-        if reports:
+            """Update database with reports and return summary"""
+            if not self.connection:
+                logging.error("No database connection available")
+                return []
+            
+            if not reports:
+                logging.info("No reports to update")
+                return []
+            
             logging.info("Updating database with {} reports...".format(len(reports)))
             update_reports = update_db(self.connection, reports)
-        
-        return update_reports
+            
+            return update_reports
     
     def close(self):
         """Close database connection"""

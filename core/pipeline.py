@@ -3,6 +3,8 @@ import logging
 from typing import List, Dict, Optional
 from database.manager import DatabaseManager
 from processors.xml_processor import XMLReportProcessor
+from utils.config_loader import load_config
+from utils.report_exporter import export_reports_to_csv
 
 
 logging.basicConfig(level=logging.INFO)
@@ -53,15 +55,10 @@ class XMLDiagnosePipeline:
             self.xml_processor = XMLReportProcessor(self.input_directory, self.date_filter, allowed_report_ids)
             result.reports = self.xml_processor.process_xml_files()
             
-            # Step 2: Export reports to CSV
-            #TODO:add a method the export the error reports to csv flle
-            # the path of the csv files need to send to: /var/Reports_To_Send
-
-                        
-            # Step 3: Update database with filtered results
+            # Step 2: Update database with filtered results
             # This step updates IMP_REPORT_LOG, IMP_REPORT_STATUS_TRACKING, and actone.alerts tables
             # with the parsed and filtered report data from Step 1
-            # Ensure database connection is still open (it may have been opened in Step 0)
+            # Returns export rows (with SAR_FOLDER_NAME) for CSV export
             if not self.db_manager.connection:
                 if not self.db_manager.connect():
                     logging.error("Skipping database update due to connection failure")
@@ -71,6 +68,19 @@ class XMLDiagnosePipeline:
             all_reports = result.reports if isinstance(result.reports, list) else [result.reports] if result.reports else []
             result.summary_reports = self.db_manager.update_reports(all_reports)
             # Note: Alert updates are now handled within the database update process
+            
+            # Step 3: Export reports to CSV (requires SAR_FOLDER_NAME from DB update)
+            export_rows = result.summary_reports if isinstance(result.summary_reports, list) else []
+            if export_rows:
+                config = load_config()
+                export_dir = config.get('export_directory', '/var/Reports_To_Send')
+                try:
+                    export_reports_to_csv(export_rows, export_dir)
+                except Exception as e:
+                    logging.error("CSV export failed: {}".format(e))
+                    # Continue - do not fail the pipeline for export errors
+            else:
+                logging.info("No reports to export, skipping CSV export")
             
             logging.info("Pipeline execution completed successfully")
             

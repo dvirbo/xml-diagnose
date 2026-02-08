@@ -8,12 +8,26 @@ from core.pipeline import XMLDiagnosePipeline
 
 
 def validate_date_format(date_str):
-    """Validate date string is in ddmmyyyy format."""
-    if not date_str:
+    """Validate date string is in dd/mm/yyyy format."""
+    if not date_str or not isinstance(date_str, str):
         return False
-    if len(date_str) != 8 or not date_str.isdigit():
+    parts = date_str.strip().split('/')
+    if len(parts) != 3:
         return False
-    return True
+    try:
+        day, month, year = int(parts[0]), int(parts[1]), int(parts[2])
+        if not (1 <= day <= 31 and 1 <= month <= 12 and 1000 <= year <= 9999):
+            return False
+        return True
+    except ValueError:
+        return False
+
+
+def date_ddmmyyyy_to_filter(date_str):
+    """Convert dd/mm/yyyy to ddmmyyyy for XML filename filtering."""
+    parts = date_str.strip().split('/')
+    day, month, year = parts[0].zfill(2), parts[1].zfill(2), parts[2]
+    return "{}{}{}".format(day, month, year)
 
 
 def main():
@@ -24,21 +38,23 @@ def main():
     # Cleanup old logs
     cleanup_logs()
     
-    # Get date from command line argument
+    # Get date from command line argument (dd/mm/yyyy format, e.g. 01/01/2025)
     if len(sys.argv) < 2:
         print("Error: Date argument is required.")
-        print("Usage: python3 main.py <ddmmyyyy>")
-        print("Example: python3 main.py 01012025")
+        print("Usage: python3 main.py <dd/mm/yyyy>")
+        print("Example: python3 main.py 01/01/2025")
         sys.exit(1)
     
-    folder_date_name = sys.argv[1].strip()
+    date_input = sys.argv[1].strip()
     
     # Validate date format
-    if not validate_date_format(folder_date_name):
-        print("Error: Date must be exactly 8 digits in ddmmyyyy format (e.g., 01012025)")
+    if not validate_date_format(date_input):
+        print("Error: Date must be in dd/mm/yyyy format (e.g., 01/01/2025)")
         sys.exit(1)
     
-    logging.info("Processing reports for date: {}".format(folder_date_name))
+    # Convert to ddmmyyyy for XML filename filtering (filenames use 01012025-...)
+    folder_date_name = date_ddmmyyyy_to_filter(date_input)
+    logging.info("Processing reports for date: {} (filter: {})".format(date_input, folder_date_name))
     
     # Your main logic here
     logging.info("Starting pipeline process")

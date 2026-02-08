@@ -290,6 +290,33 @@ class DatabaseUpdater:
         
         return (p17, p18, p19, processed_report.alert_id)
 
+    def _build_export_row(self, processed_report: ProcessedReport) -> Dict:
+        """
+        Build a single export row for CSV export.
+        Returns dict with: response_status, error_code, error_description, report_folder, report_id, alert_id
+        """
+        status = processed_report.status
+        final_response = processed_report.final_response or {}
+        
+        response_status = status.get('status_category', '')
+        
+        # For valid reports: empty; for invalid: from FinalResponse
+        if status.get('overall_valid', False):
+            error_code = ''
+            error_description = ''
+        else:
+            error_code = final_response.get('ErrorCode', '')
+            error_description = final_response.get('ReportInstanceStatusReason', '')
+        
+        return {
+            'response_status': response_status or '',
+            'error_code': error_code or '',
+            'error_description': error_description or '',
+            'report_folder': processed_report.sar_folder_name or '',
+            'report_id': processed_report.report_number or '',
+            'alert_id': str(processed_report.alert_id or '')
+        }
+
     def _execute_bulk_updates(self, updates_for_report_log: List[Tuple], 
                              updates_for_status_tracking: List[Tuple],
                              updates_for_alerts: List[Tuple] = None,
@@ -361,7 +388,7 @@ class DatabaseUpdater:
         try:
             if not reports:
                 logging.info("No reports to process")
-                return
+                return []
             
             logging.info("Starting bulk update for {} reports".format(len(reports)))
             logging.debug("Input reports type: {}".format(type(reports)))
@@ -389,6 +416,7 @@ class DatabaseUpdater:
             updates_for_report_log = []
             updates_for_status_tracking = []
             updates_for_alerts = []
+            export_rows = []
             
             processed_count = 0
             missing_count = 0
@@ -423,6 +451,7 @@ class DatabaseUpdater:
                     
                     updates_for_report_log.append(report_log_update)
                     updates_for_status_tracking.append(status_tracking_insert)
+                    export_rows.append(self._build_export_row(processed_report))
                     
                     if alert_update:
                         updates_for_alerts.append(alert_update)
@@ -474,7 +503,7 @@ class DatabaseUpdater:
                 except Exception as e:
                     logging.warning("Error closing alerts connection: {}".format(e))
             
-            return reports
+            return export_rows
             
         except Exception as e:
             # Rollback on error
