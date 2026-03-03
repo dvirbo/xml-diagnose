@@ -5,6 +5,8 @@ import logging
 from typing import Dict, Tuple, Any, List, Set, Optional
 import xml.etree.ElementTree as ET
 
+from utils.report_utils import report_number_normalize
+
 # Constants
 FIRST_RESPONSE_TAG = "FirstResponse"
 FINAL_RESPONSE_TAG = "FinalResponse"
@@ -141,9 +143,9 @@ def parse_xml_files(directory: str, date_filter: str = None, allowed_report_ids:
 
 def _parse_first_response(root) -> Dict[str, Dict]:
     """Extract data from FirstResponse XML."""
-    report_number = _safe_get_text(root, "ReportNumber")
-    report_number = report_number.lstrip('0')
-    if not report_number:
+    raw_report_number = _safe_get_text(root, "ReportNumber")
+    normalized_report_number = report_number_normalize(raw_report_number)
+    if not normalized_report_number:
         logging.warning("FirstResponse missing ReportNumber, skipping")
         return {}
         
@@ -151,7 +153,7 @@ def _parse_first_response(root) -> Dict[str, Dict]:
     is_valid = valid_status == FIRST_STATUS_OK
     
     return { 
-        report_number: {
+        normalized_report_number: {
             "ReportDate": _safe_get_text(root, "ReportDate"),
             "ReportInstanceDate": _safe_get_text(root, "ReportInstanceDate"),
             "ReportInstanceReference": _safe_get_text(root, "ReportInstanceReference"),
@@ -159,23 +161,45 @@ def _parse_first_response(root) -> Dict[str, Dict]:
             "valid": is_valid,
             "ReportInstanceStatusReason": _safe_get_text(root, "ReportInstanceStatusReason"),
             "ReportInstanceStatusId": _safe_get_text(root, "ReportInstanceStatusId"),
-            "ReportInstanceLegalStatusId": _safe_get_text(root, "ReportInstanceLegalStatusId")
+            "ReportInstanceLegalStatusId": _safe_get_text(root, "ReportInstanceLegalStatusId"),
+            # Preserve the original ReportNumber as received from Rashut
+            "ReportNumberOriginal": raw_report_number
         }
     }
 
 
 def _parse_final_response(root) -> Dict[str, Dict]:
     """Extract data from FinalResponse XML."""
-    report_number = _safe_get_text(root, "ReportMetaData/ReportNumber")
-    report_number = report_number.lstrip('0')
-    if not report_number:
+    raw_report_number = _safe_get_text(root, "ReportMetaData/ReportNumber")
+    normalized_report_number = report_number_normalize(raw_report_number)
+    if not normalized_report_number:
         logging.warning("FinalResponse missing ReportNumber, skipping")
         return {}
         
     legal_status = _safe_get_text(root, "ReportMetaData/ReportInstanceLegalStatusDesc")
+    # Primary (older structure): ErrorReport directly under FinalResponse
     error_code = _safe_get_text(root, "ErrorReport/Error/ErrorCode")
+    error_description = _safe_get_text(root, "ErrorReport/Error/ErrorDescription")
+    # Fallback (prod structure): ErrorReport under Mivzak with namespace
+    if not error_code or not error_description:
+        ns = {'ns': 'http://www.justice.gov.il/IMPA/RLS/Flash/Responses'}
+        try:
+            err_elem = root.find(".//Mivzak/ns:ErrorReport/ns:Error", ns)
+            if err_elem is not None:
+                if not error_code:
+                    code_elem = err_elem.find("ns:ErrorCode", ns)
+                    if code_elem is not None and code_elem.text:
+                        error_code = code_elem.text.strip()
+                if not error_description:
+                    desc_elem = err_elem.find("ns:ErrorDescription", ns)
+                    if desc_elem is not None and desc_elem.text:
+                        error_description = desc_elem.text.strip()
+        except Exception as e:
+            logging.debug("Fallback parsing for ErrorReport under Mivzak failed: {}".format(e))
     is_valid = legal_status == LEGAL_STATUS_OK
     
+    # Preserve original ReportNumber for display
+    report_number_original = raw_report_number
     data = {
         "ReportInstanceReference": _safe_get_text(root, "ReportMetaData/ReportInstanceReference"),
         "ReportInstanceLegalStatusDesc": legal_status,
@@ -187,7 +211,7 @@ def _parse_final_response(root) -> Dict[str, Dict]:
     # Always try to extract mispar_tkina, regardless of validity
     mispar_tkina_value = _safe_get_text(root, "Mivzak/GeneralData/Statuses/Status/@id")
     logging.debug("Extracted mispar_tkina from XML for report {}: '{}' (is_valid={})".format(
-        report_number, mispar_tkina_value, is_valid))
+        normalized_report_number, mispar_tkina_value, is_valid))
     
     if is_valid:
         data.update({
@@ -198,13 +222,14 @@ def _parse_final_response(root) -> Dict[str, Dict]:
         data.update({
             "ReportInstanceStatusReason": _safe_get_text(root, "ReportMetaData/ReportInstanceStatusReason"),
             "ErrorCode": error_code,
+            "ErrorDescription": error_description,
             "mispar_tkina": mispar_tkina_value  # Include mispar_tkina even for invalid responses
         })
     
     logging.debug("FinalResponse data for report {}: mispar_tkina='{}', valid={}".format(
-        report_number, data.get('mispar_tkina', ''), is_valid))
+        normalized_report_number, data.get('mispar_tkina', ''), is_valid))
     
-    return {report_number: data}
+    return {normalized_report_number: data}
 
 
 def _safe_get_text(element: ET.Element, xpath: str) -> str:
@@ -328,7 +353,14 @@ def link_responses(first_responses: Dict[str, Dict],
             status_category = "דיווח תקין"
         
         combined_data = {
+            # Normalized key as internal ReportNumber
             "ReportNumber": report_number,
+            # Preserve original ReportNumber for display (prefer FinalResponse, then FirstResponse)
+            "ReportNumberOriginal": (
+                (final_data or {}).get("ReportNumberOriginal")
+                or (first_data or {}).get("ReportNumberOriginal")
+                or report_number
+            ),
             "FirstResponse": first_data,
             "FinalResponse": final_data,
             "Status": {

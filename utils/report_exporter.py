@@ -8,17 +8,19 @@ from typing import List, Dict
 
 # Fixed Hebrew column headers (order matches export row keys)
 CSV_HEADERS = [
-    'סטטוס תגובה',    # response_status
-    'קוד שגיאה',       # error_code
-    'תיאור שגיאה',     # error_description
-    'שם תיקיית דיווח', # report_folder
-    'מספר דיווח',      # report_id
-    'מספר התראה'       # alert_id
+    'סטטוס תגובה ראשונית',  # first_status
+    'סטטוס תגובה סופית',    # final_status
+    'קוד שגיאה',             # error_code
+    'תיאור שגיאה',           # error_description
+    'שם תיקיית דיווח',       # report_folder
+    'מספר דיווח',            # report_id
+    'מספר התראה'             # alert_id
 ]
 
 # Ordered keys for export row (must match CSV_HEADERS)
 EXPORT_ROW_KEYS = [
-    'response_status',
+    'first_status',
+    'final_status',
     'error_code',
     'error_description',
     'report_folder',
@@ -27,14 +29,22 @@ EXPORT_ROW_KEYS = [
 ]
 
 
-def export_reports_to_csv(export_rows: List[Dict], export_dir: str) -> str:
+def export_reports_to_csv(
+    export_rows: List[Dict],
+    export_dir: str,
+    reports_sent_to_rashut: int = None,
+    reports_parsed: int = None
+) -> str:
     """
     Export report rows to a CSV file with Hebrew headers.
     
     Args:
-        export_rows: List of dicts with keys: response_status, error_code,
-                     error_description, report_folder, report_id, alert_id
+        export_rows: List of dicts with keys: first_status, final_status,
+                     error_code, error_description, report_folder,
+                     report_id, alert_id
         export_dir: Directory path for output CSV (created if not exists)
+        reports_sent_to_rashut: Optional count of reports sent to Rashut (latest process)
+        reports_parsed: Optional count of reports parsed by this run
     
     Returns:
         Full path of the created CSV file, or empty string if no rows
@@ -52,6 +62,15 @@ def export_reports_to_csv(export_rows: List[Dict], export_dir: str) -> str:
     try:
         with open(filepath, 'w', newline='', encoding='utf-8-sig') as f:
             writer = csv.writer(f)
+            
+            # Optional summary rows at the top of the CSV
+            if reports_sent_to_rashut is not None and reports_parsed is not None:
+                writer.writerow(['דיווחים שנשלחו לרשות', str(reports_sent_to_rashut)])
+                writer.writerow(['דיווחים שפורשו', str(reports_parsed)])
+                # Blank separator row before detailed table
+                writer.writerow([])
+            
+            # Existing header and data rows
             writer.writerow(CSV_HEADERS)
             for row in export_rows:
                 writer.writerow([row.get(k, '') for k in EXPORT_ROW_KEYS])

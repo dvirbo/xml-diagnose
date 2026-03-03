@@ -68,8 +68,8 @@ def main():
     pipeline = XMLDiagnosePipeline(input_dir, date_filter=folder_date_name)
     pipeline.run()
 
-
-if __name__ == "__main__":
+#TODO: THE MISPAT TKINA SHOULD BE ReportInstanceReference
+if __name__ == "__main__":  #TODO: REMOVE THE DATE LOGIC
     main()
     # Query filter is now integrated: The pipeline automatically queries the latest process
     # and filters XML files to only process reports matching those report_ids.
@@ -78,3 +78,9 @@ if __name__ == "__main__":
     filename meaning:
     ReportDate-?-UAR-ST-ReportNumber-ReportInstanceReference.FinR.XML
     '''
+'''
+TODO:
+ - remove the date from the process.
+ - change the MISPAR TKINA (waiting for answers)
+
+'''

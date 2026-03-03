@@ -21,7 +21,9 @@ class ReportUpdate:
 class ProcessedReport:
     """Data class to hold processed report information (Python 3.6 compatible)"""
     def __init__(self, report_number, report_data, report_id, alert_id, sar_folder_name, first_response, final_response, status):
+        # Normalized report number used for lookups (matches database integer IDs)
         self.report_number = report_number
+        # Full combined report data including original ReportNumber from Rashut
         self.report_data = report_data
         self.report_id = report_id
         self.alert_id = alert_id
@@ -39,29 +41,46 @@ class DatabaseUpdater:
     
     def _get_existing_reports_bulk(self, report_numbers: List[str]) -> Dict[str, Tuple[Optional[str], Optional[str], Optional[str]]]:
         """Get existing report and alert IDs from database in bulk."""
+        if not report_numbers:
+            return {}
+        ids_preview = [int(rn) for rn in report_numbers[:20]]
+        if len(report_numbers) > 20:
+            ids_preview.append('...')
+        logging.info("Looking up {} report_ids in IMP_REPORT_LOG: {}".format(len(report_numbers), ids_preview))
+        # Build IN clause with literal integers: IN (1,2,3) - no bind params
+        in_list = ','.join(str(int(rn)) for rn in report_numbers)
+        bulk_query = SQL_QUERIES['SELECT_REPORTS_BULK'].format(placeholders=in_list)
+        logging.info("SELECT_REPORTS_BULK query: {}".format(bulk_query.strip().replace('\n', ' ')))
+        # Use a dedicated cursor; run validation queries in same session to confirm connection/schema
         try:
-            if not report_numbers:
-                return {}
-            # Create placeholders for the IN clause - Oracle uses :1, :2, etc.
-            placeholders = ','.join([':{}'.format(i+1) for i in range(len(report_numbers))])
-            bulk_query = SQL_QUERIES['SELECT_REPORTS_BULK'].format(placeholders=placeholders)
-            
-            self.cursor.execute(bulk_query, report_numbers)
-            rows = self.cursor.fetchall()
-            
-            # Create a mapping of report_id -> (report_id, alert_id, folder_name)
-            result = {}
-            for row in rows:
-                report_id = row[0]  # report_id is the first column
-                alert_id = row[1]   # alert_id is the second column
-                folder_name = row[2] if len(row) > 2 else None  # SAR_folder_name - may be None
-                result[report_id] = (report_id, alert_id, folder_name)
-            
-            return result
-            
+            bulk_cursor = self.connection.cursor()
+            try:
+                # Validation: total rows in IMP_REPORT_LOG and current user/schema (same session)
+                bulk_cursor.execute("SELECT COUNT(*) FROM IMP_REPORT_LOG")
+                total_count = bulk_cursor.fetchone()[0]
+                logging.info("IMP_REPORT_LOG total row count (this session): {}".format(total_count))
+                bulk_cursor.execute("SELECT SYS_CONTEXT('USERENV','CURRENT_SCHEMA') FROM DUAL")
+                current_schema = bulk_cursor.fetchone()[0]
+                logging.info("Current schema (this session): {}".format(current_schema))
+                # Main query
+                bulk_cursor.execute(bulk_query)
+                rows = bulk_cursor.fetchall()
+                logging.info("SELECT_REPORTS_BULK returned {} rows".format(len(rows)))
+            finally:
+                bulk_cursor.close()
         except Exception as e:
-            logging.error("Error fetching bulk report info: {}".format(e))
-            return {report_number: (None, None, None) for report_number in report_numbers}
+            import traceback
+            logging.error("Error executing SELECT_REPORTS_BULK: {}".format(e))
+            logging.error(traceback.format_exc())
+            return {int(rn): (None, None, None) for rn in report_numbers}
+        # Create a mapping of report_id -> (report_id, alert_id, folder_name)
+        result = {}
+        for row in rows:
+            report_id = row[0]  # report_id is the first column
+            alert_id = row[1]   # alert_id is the second column
+            folder_name = row[2] if len(row) > 2 else None  # SAR_folder_name - may be None
+            result[report_id] = (report_id, alert_id, folder_name)
+        return result
 
     def _parse_reports_input(self, reports: Union[Dict, List]) -> Tuple[List[str], List[Tuple[str, Dict]]]:
         """
@@ -175,18 +194,17 @@ class DatabaseUpdater:
                     logging.warning("Could not parse ReportInstanceDate '{}': {}".format(date_str, e))
                     received_date = None
         
-        # status_desc: Populated in code based on FIR and FIN response
-        status_desc = status.get('status_category', '')
+        # status_desc: simple overall status in Hebrew based on FIR/FIN validity
+        overall_valid = status.get('overall_valid', False)
+        status_desc = "תקין" if overall_valid else "לא תקין"
         
-        # mispar_tkina: From FinalResponse/Mivzak/GeneralData/Statuses/Status[@id='']
+        # mispar_tkina: derive from report_number (numeric Report ID)
         mispar_tkina = None
-        if final_response and final_response_valid:
-            mispar_tkina_str = final_response.get('mispar_tkina', '')
-            if mispar_tkina_str:
-                try:
-                    mispar_tkina = int(mispar_tkina_str)
-                except (ValueError, TypeError):
-                    mispar_tkina = None
+        try:
+            # Use the normalized report_number without leading zeros
+            mispar_tkina = int(processed_report.report_number.lstrip('0') or '0')
+        except (ValueError, TypeError):
+            mispar_tkina = None
         
         return (
             first_response_orig,
@@ -254,25 +272,15 @@ class DatabaseUpdater:
         logging.debug("Status data: {}".format(status))
         logging.debug("Final response data: {}".format(final_response))
         
-        # p17 = status_divuah (status_category)
-        p17 = status.get('status_category', '')
-        logging.debug("p17 (status_category): '{}'".format(p17))
+        # p17 = status_divuah - simple overall status in Hebrew
+        overall_valid = status.get('overall_valid', False)
+        p17 = "תקין" if overall_valid else "לא תקין"
+        logging.debug("p17 (overall status): '{}'".format(p17))
         
-        # p18 = Mispar_tkina (from FinalResponse, as string for VARCHAR2(50))
-        p18 = ''
-        if final_response:
-            mispar_tkina_raw = final_response.get('mispar_tkina', '')
-            logging.debug("mispar_tkina from final_response: '{}' (type: {})".format(
-                mispar_tkina_raw, type(mispar_tkina_raw).__name__))
-            
-            if mispar_tkina_raw:
-                p18 = str(mispar_tkina_raw)
-                logging.debug("p18 (Mispar_tkina) set to: '{}'".format(p18))
-            else:
-                logging.warning("mispar_tkina is empty or missing in final_response for report {}".format(
-                    processed_report.report_number))
-        else:
-            logging.warning("Final response is None for report {}".format(processed_report.report_number))
+        # p18 = Mispar_tkina (derived from report_number, as string for VARCHAR2(50))
+        p18 = processed_report.report_number.lstrip('0') or '0'
+        logging.debug("p18 (Mispar_tkina) from report_number '{}': '{}'".format(
+            processed_report.report_number, p18))
         
         # p19 = Mispar_divuah (report_number without leading zeros)
         p19 = processed_report.report_number.lstrip('0') or '0'
@@ -293,27 +301,38 @@ class DatabaseUpdater:
     def _build_export_row(self, processed_report: ProcessedReport) -> Dict:
         """
         Build a single export row for CSV export.
-        Returns dict with: response_status, error_code, error_description, report_folder, report_id, alert_id
+        Returns dict with: first_status, final_status, error_code,
+        error_description, report_folder, report_id, alert_id
         """
         status = processed_report.status
         final_response = processed_report.final_response or {}
-        
-        response_status = status.get('status_category', '')
-        
+        report_data = processed_report.report_data or {}
+
+        # Simple first/final statuses based on valid flags
+        first_valid = status.get('first_response_valid', False)
+        final_valid = status.get('final_response_valid', False)
+        first_status = "תקין" if first_valid else "לא תקין"
+        final_status = "תקין" if final_valid else "לא תקין"
+
         # For valid reports: empty; for invalid: from FinalResponse
         if status.get('overall_valid', False):
             error_code = ''
             error_description = ''
         else:
             error_code = final_response.get('ErrorCode', '')
-            error_description = final_response.get('ReportInstanceStatusReason', '')
+            # Use ErrorDescription element from XML as the source for CSV error_description
+            error_description = final_response.get('ErrorDescription', '')
+        
+        # Prefer the original Rashut report number for CSV if available
+        report_number_display = report_data.get('ReportNumberOriginal') or processed_report.report_number or ''
         
         return {
-            'response_status': response_status or '',
+            'first_status': first_status or '',
+            'final_status': final_status or '',
             'error_code': error_code or '',
             'error_description': error_description or '',
             'report_folder': processed_report.sar_folder_name or '',
-            'report_id': processed_report.report_number or '',
+            'report_id': report_number_display,
             'alert_id': str(processed_report.alert_id or '')
         }
 
