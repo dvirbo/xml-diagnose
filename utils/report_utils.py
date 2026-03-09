@@ -48,3 +48,16 @@ def report_number_normalize(report_number: str) -> str:
     value = report_number_to_int(report_number)
     return str(value) if value is not None else ""
 
+
+def report_id_to_rashut_display(report_id) -> str:
+    """
+    Format integer report_id as Rashut display string: 000ACT + 6 zero-padded digits.
+    E.g. 251531 -> '000ACT251531', 460 -> '000ACT000460'.
+    """
+    if report_id is None:
+        return ""
+    try:
+        return "000ACT" + str(int(report_id)).zfill(6)
+    except (ValueError, TypeError):
+        return ""
+

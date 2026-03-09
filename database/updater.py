@@ -4,6 +4,7 @@ import logging
 from typing import Dict, List, Tuple, Optional, Union
 from database.queries import SQL_QUERIES, DB_SETTINGS
 from database.connection import connect_to_alerts_database
+from utils.report_utils import report_id_to_rashut_display
 
 
 class ReportUpdate:
@@ -198,13 +199,8 @@ class DatabaseUpdater:
         overall_valid = status.get('overall_valid', False)
         status_desc = "תקין" if overall_valid else "לא תקין"
         
-        # mispar_tkina: derive from report_number (numeric Report ID)
-        mispar_tkina = None
-        try:
-            # Use the normalized report_number without leading zeros
-            mispar_tkina = int(processed_report.report_number.lstrip('0') or '0')
-        except (ValueError, TypeError):
-            mispar_tkina = None
+        # mispar_tkina: use the numeric REPORT_ID from the database
+        mispar_tkina = processed_report.report_id
         
         return (
             first_response_orig,
@@ -257,7 +253,7 @@ class DatabaseUpdater:
             processed_report: ProcessedReport object
             
         Returns:
-            Tuple of (p17, p18, p19, alert_id) or None if alert_id is missing
+            Tuple of (p17, p19, alert_id) or None if alert_id is missing
         """
         if not processed_report.alert_id:
             logging.warning("Alert update skipped for report {}: alert_id is missing".format(processed_report.report_number))
@@ -277,26 +273,20 @@ class DatabaseUpdater:
         p17 = "תקין" if overall_valid else "לא תקין"
         logging.debug("p17 (overall status): '{}'".format(p17))
         
-        # p18 = Mispar_tkina (derived from report_number, as string for VARCHAR2(50))
-        p18 = processed_report.report_number.lstrip('0') or '0'
-        logging.debug("p18 (Mispar_tkina) from report_number '{}': '{}'".format(
-            processed_report.report_number, p18))
-        
-        # p19 = Mispar_divuah (report_number without leading zeros)
-        p19 = processed_report.report_number.lstrip('0') or '0'
-        logging.debug("p19 (Mispar_divuah) from report_number '{}': '{}'".format(
-            processed_report.report_number, p19))
+        # p19 = Mispar_divuah (Rashut display format: 000ACT + 6 zero-padded digits)
+        p19 = report_id_to_rashut_display(processed_report.report_id)
+        logging.debug("p19 (Mispar_divuah) from report_id '{}': '{}'".format(
+            processed_report.report_id, p19))
         
         # Ensure all values are strings and max 50 chars for VARCHAR2(50)
         p17 = str(p17)[:50] if p17 else ''
-        p18 = str(p18)[:50] if p18 else ''
         p19 = str(p19)[:50] if p19 else ''
         
         # Log final values being sent to database
-        logging.info("Alert update prepared for alert_id {}: p17='{}', p18='{}', p19='{}'".format(
-            processed_report.alert_id, p17, p18, p19))
+        logging.info("Alert update prepared for alert_id {}: p17='{}', p19='{}'".format(
+            processed_report.alert_id, p17, p19))
         
-        return (p17, p18, p19, processed_report.alert_id)
+        return (p17, p19, processed_report.alert_id)
 
     def _build_export_row(self, processed_report: ProcessedReport) -> Dict:
         """
@@ -313,7 +303,8 @@ class DatabaseUpdater:
         final_valid = status.get('final_response_valid', False)
         first_status = "תקין" if first_valid else "לא תקין"
         final_status = "תקין" if final_valid else "לא תקין"
-
+        has_first_response = status.get('has_first_response', False)
+        
         # For valid reports: empty; for invalid: from FinalResponse
         if status.get('overall_valid', False):
             error_code = ''
@@ -322,9 +313,16 @@ class DatabaseUpdater:
             error_code = final_response.get('ErrorCode', '')
             # Use ErrorDescription element from XML as the source for CSV error_description
             error_description = final_response.get('ErrorDescription', '')
+            # If we have only a FinalResponse (no FirstResponse), override with a clear message
+            if not has_first_response:
+                error_description = "לא התקבלה תגובה ראשונה"
         
-        # Prefer the original Rashut report number for CSV if available
-        report_number_display = report_data.get('ReportNumberOriginal') or processed_report.report_number or ''
+        # CSV report_id: Rashut display format (000ACT + 6 zero-padded digits)
+        report_number_original = report_data.get('ReportNumberOriginal') or ''
+        if report_number_original:
+            report_id_display = report_number_original
+        else:
+            report_id_display = report_id_to_rashut_display(processed_report.report_id)
         
         return {
             'first_status': first_status or '',
@@ -332,7 +330,7 @@ class DatabaseUpdater:
             'error_code': error_code or '',
             'error_description': error_description or '',
             'report_folder': processed_report.sar_folder_name or '',
-            'report_id': report_number_display,
+            'report_id': report_id_display,
             'alert_id': str(processed_report.alert_id or '')
         }
 
@@ -373,8 +371,8 @@ class DatabaseUpdater:
             try:
                 # Log details of what we're about to update
                 for idx, update_tuple in enumerate(updates_for_alerts[:5]):  # Log first 5 for debugging
-                    logging.debug("Alert update #{}: p17='{}', p18='{}', p19='{}', alert_id='{}'".format(
-                        idx + 1, update_tuple[0], update_tuple[1], update_tuple[2], update_tuple[3]))
+                    logging.debug("Alert update #{}: p17='{}', p19='{}', alert_id='{}'".format(
+                        idx + 1, update_tuple[0], update_tuple[1], update_tuple[2]))
                 
                 alerts_cursor = alerts_connection.cursor()
                 alerts_cursor.executemany(SQL_QUERIES['UPDATE_ALERT'], updates_for_alerts)
@@ -475,8 +473,8 @@ class DatabaseUpdater:
                     if alert_update:
                         updates_for_alerts.append(alert_update)
                         # Log the actual values being added to batch
-                        logging.debug("Added alert update to batch: p17='{}', p18='{}', p19='{}', alert_id='{}'".format(
-                            alert_update[0], alert_update[1], alert_update[2], alert_update[3]))
+                        logging.debug("Added alert update to batch: p17='{}', p19='{}', alert_id='{}'".format(
+                            alert_update[0], alert_update[1], alert_update[2]))
                     else:
                         logging.warning("Skipping alert update for report {}: alert_id is missing".format(report_number))
                     

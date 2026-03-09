@@ -28,8 +28,8 @@ SQL_QUERIES = {
     
     'UPDATE_ALERT': """
         UPDATE actone.alerts 
-        SET p17 = :1, p18 = :2, p19 = :3 
-        WHERE alert_id = :4
+        SET p17 = :1, p19 = :2 
+        WHERE alert_id = :3
     """,
     
     'GET_REPORTS_FROM_LATEST_PROCESS': """

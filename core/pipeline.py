@@ -5,7 +5,7 @@ from database.manager import DatabaseManager
 from processors.xml_processor import XMLReportProcessor
 from utils.config_loader import load_config
 from utils.report_exporter import export_reports_to_csv
-from utils.report_utils import report_number_to_int
+from utils.report_utils import report_number_to_int, report_id_to_rashut_display
 
 
 logging.basicConfig(level=logging.INFO)
@@ -100,9 +100,10 @@ class XMLDiagnosePipeline:
                                 'first_status': '',
                                 'final_status': '',
                                 'error_code': '',
-                                'error_description': 'לא התקבלה תגובה מהרשות',
+                                # No FinalResponse received for this report_id
+                                'error_description': 'לא התקבלה תגובה שנייה',
                                 'report_folder': '',
-                                'report_id': str(rid),
+                                'report_id': report_id_to_rashut_display(rid),
                                 'alert_id': ''
                             })
                         export_rows.extend(placeholder_rows)
