@@ -5,7 +5,7 @@ import logging
 from typing import Dict, Tuple, Any, List, Set, Optional
 import xml.etree.ElementTree as ET
 
-from utils.report_utils import report_number_normalize
+from utils.report_utils import report_number_normalize, report_number_to_int
 
 # Constants
 FIRST_RESPONSE_TAG = "FirstResponse"
@@ -28,14 +28,14 @@ def _extract_report_number_from_filename(filename: str) -> Optional[int]:
     Returns:
         report_number as integer, or None if not found
     """
-    # Pattern: UAR-ST- followed by digits, then a dot
-    # Match: UAR-ST-000000251531.41077558
-    match = re.search(r'UAR-ST-(\d+)\.', filename)
+    # Pattern: UAR-ST- followed by a token (numeric or 000ACTxxxxxx) up to the next dot
+    # Examples:
+    #   UAR-ST-000000251531.41077558
+    #   UAR-ST-000ACT000004.41077558
+    match = re.search(r'UAR-ST-([^.]+)\.', filename)
     if match:
-        try:
-            return int(match.group(1))
-        except ValueError:
-            return None
+        token = match.group(1)
+        return report_number_to_int(token)
     return None
 
 

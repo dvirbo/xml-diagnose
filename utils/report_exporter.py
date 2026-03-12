@@ -66,12 +66,15 @@ def export_reports_to_csv(
             # Optional summary rows at the top of the CSV
             if reports_sent_to_rashut is not None and reports_parsed is not None:
                 writer.writerow(['דיווחים שנשלחו לרשות', str(reports_sent_to_rashut)])
-                writer.writerow(['דיווחים שפורשו', str(reports_parsed)])
+                writer.writerow(['דיווחים שהתקבלו', str(reports_parsed)])
                 # Blank separator row before detailed table
                 writer.writerow([])
             
             # Existing header and data rows
             writer.writerow(CSV_HEADERS)
+            # Log a small sample of report_id values for debugging
+            sample_ids = [row.get('report_id', '') for row in export_rows[:5]]
+            logging.info("Preparing to write %d CSV rows. Sample report_id values: %s", len(export_rows), sample_ids)
             for row in export_rows:
                 writer.writerow([row.get(k, '') for k in EXPORT_ROW_KEYS])
         

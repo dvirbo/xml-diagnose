@@ -317,12 +317,12 @@ class DatabaseUpdater:
             if not has_first_response:
                 error_description = "לא התקבלה תגובה ראשונה"
         
-        # CSV report_id: Rashut display format (000ACT + 6 zero-padded digits)
-        report_number_original = report_data.get('ReportNumberOriginal') or ''
-        if report_number_original:
-            report_id_display = report_number_original
-        else:
-            report_id_display = report_id_to_rashut_display(processed_report.report_id)
+        # CSV report_id: Rashut display format (000ACT + 6 zero-padded digits), derived from DB REPORT_ID
+        report_id_display = report_id_to_rashut_display(processed_report.report_id)
+        # Log chosen report_id for CSV at both DEBUG and INFO levels for easier troubleshooting
+        msg = "CSV export row report_id for DB REPORT_ID %s: display='%s'"
+        logging.debug(msg, processed_report.report_id, report_id_display)
+        logging.info(msg, processed_report.report_id, report_id_display)
         
         return {
             'first_status': first_status or '',
@@ -438,6 +438,7 @@ class DatabaseUpdater:
             processed_count = 0
             missing_count = 0
             failed_count = 0
+            processed_ids = set()
             
             # Connect to alerts database
             alerts_connection = None
@@ -478,6 +479,7 @@ class DatabaseUpdater:
                     else:
                         logging.warning("Skipping alert update for report {}: alert_id is missing".format(report_number))
                     
+                    processed_ids.add(processed_report.report_id)
                     processed_count += 1
                     logging.debug("Successfully prepared updates for report {}".format(report_number))
                     
@@ -486,7 +488,27 @@ class DatabaseUpdater:
                     logging.error("Error preparing updates for report {}: {}".format(report_number, e))
             
             logging.info("Processed {} reports, {} missing from DB, {} failed".format(processed_count, missing_count, failed_count))
-            logging.info("Prepared {} alert updates".format(len(updates_for_alerts)))
+            logging.info("Prepared {} alert updates before handling missing responses".format(len(updates_for_alerts)))
+
+            # Handle report_ids from latest process that have no XML response
+            if existing_reports:
+                all_report_ids = set(existing_reports.keys())
+                missing_report_ids = all_report_ids - processed_ids
+                if missing_report_ids:
+                    logging.info("Found {} report_ids with no Rashut response; preparing alert updates for them".format(
+                        len(missing_report_ids)))
+                    for rid in sorted(missing_report_ids):
+                        report_id, alert_id, _folder = existing_reports.get(rid, (None, None, None))
+                        if not alert_id:
+                            logging.warning("Skipping 'no response' alert update for REPORT_ID {}: missing alert_id".format(rid))
+                            continue
+                        p17 = "לא התקבלה תגובה מהרשות"
+                        p19 = report_id_to_rashut_display(report_id)
+                        updates_for_alerts.append((p17, p19, alert_id))
+                        logging.debug("Added 'no response' alert update: REPORT_ID=%s, p17='%s', p19='%s', alert_id='%s'",
+                                      report_id, p17, p19, alert_id)
+
+            logging.info("Prepared {} total alert updates (including 'no response' cases)".format(len(updates_for_alerts)))
             
             # Step 3: Execute bulk updates (including alerts if connection available)
             self._execute_bulk_updates(
