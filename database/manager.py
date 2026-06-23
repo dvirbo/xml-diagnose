@@ -33,21 +33,74 @@ class DatabaseManager:
         if not self.connection:
             logging.error("No database connection available")
             return []
-        
+
         try:
             cursor = self.connection.cursor()
-            query = SQL_QUERIES['GET_REPORTS_FROM_LATEST_PROCESS']
-            cursor.execute(query)
+            cursor.execute(SQL_QUERIES['GET_REPORTS_FROM_LATEST_PROCESS'])
             rows = cursor.fetchall()
             cursor.close()
-            
             result = [row[0] for row in rows]
             logging.info("Retrieved {} report_ids from latest process".format(len(result)))
             return result
-            
         except Exception as e:
             logging.error("Error executing query to get reports from latest process: {}".format(e))
             return []
+
+    def get_reports_to_process(self) -> Dict:
+        """
+        Get report IDs for XML filtering and no-response tracking.
+
+        Returns:
+            Dict with:
+            - allowed_report_ids: latest process ∪ no-response reports (for XML filter)
+            - no_response_ids: reports with no first/final response (for CSV placeholders)
+            - report_metadata: {report_id: {alert_id, report_folder}} for no-response reports
+        """
+        empty = {
+            'allowed_report_ids': set(),
+            'no_response_ids': set(),
+            'report_metadata': {},
+        }
+        if not self.connection:
+            logging.error("No database connection available")
+            return empty
+
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(SQL_QUERIES['GET_REPORTS_FROM_LATEST_PROCESS'])
+            latest_ids = [row[0] for row in cursor.fetchall()]
+
+            cursor.execute(SQL_QUERIES['GET_REPORTS_NO_RESPONSE'])
+            no_response_rows = cursor.fetchall()
+            cursor.close()
+        except Exception as e:
+            logging.error("Error fetching reports to process: {}".format(e))
+            return empty
+
+        no_response_ids = set()
+        report_metadata = {}
+        for row in no_response_rows:
+            report_id = row[0]
+            no_response_ids.add(report_id)
+            report_metadata[report_id] = {
+                'alert_id': row[1] or '',
+                'report_folder': row[2] or '',
+            }
+
+        latest_set = set(latest_ids)
+        allowed_report_ids = latest_set | no_response_ids
+        overlap = len(latest_set & no_response_ids)
+
+        logging.info(
+            "Report scope: {} from latest process, {} no-response, {} overlap, {} total".format(
+                len(latest_set), len(no_response_ids), overlap, len(allowed_report_ids)
+            )
+        )
+        return {
+            'allowed_report_ids': allowed_report_ids,
+            'no_response_ids': no_response_ids,
+            'report_metadata': report_metadata,
+        }
     
     def get_report_numbers_by_ids(self, report_ids: List[int]) -> Set[int]:
         """

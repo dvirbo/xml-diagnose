@@ -172,12 +172,15 @@ password_key = actone
 
 ### Processing Flow
 
-1. **Query Latest Process**: Connects to the database and retrieves report IDs from the latest import process
-2. **Filter XML Files**: Only processes XML files whose report numbers match the retrieved report IDs
+1. **Query Report Scope**: Connects to the database and builds the report ID set from two sources:
+   - Report IDs from the **latest import process** (`imp_report_processes_log`)
+   - Report IDs with **no response at all** in `IMP_REPORT_LOG` (`FIRST_RESPONSE_ORIG IS NULL` and `FINAL_RESPONSE_VALID IS NULL`)
+   The union is used for XML filtering so responses for older pending reports are still processed.
+2. **Filter XML Files**: Only processes XML files whose report numbers match the combined report ID set
 3. **Parse XML**: Extracts data from FirstResponse and FinalResponse XML files
 4. **Link Reports**: Links FirstResponse and FinalResponse files by ReportNumber
 5. **Update Database**: Updates all three database tables in a single transaction (SAR_FOLDER_NAME is required for export)
-6. **Export to CSV**: Writes all processed reports to a CSV file in the export directory with Hebrew headers (סטטוס תגובה, קוד שגיאה, תיאור שגיאה, שם תיקיית דיווח, מספר דיווח, מספר התראה). File naming: `reports_YYYYMMDD_HHMMSS.csv`
+6. **Export to CSV**: Writes processed reports and no-response placeholders to a CSV file in the export directory. Reports still awaiting any Rashut response (both response fields NULL) that were not parsed this run appear as placeholder rows with error description `לא התקבלה תגובה מהרשות`, plus `alert_id` and folder name from the database. Hebrew headers: סטטוס תגובה, קוד שגיאה, תיאור שגיאה, שם תיקיית דיווח, מספר דיווח, מספר התראה. File naming: `reports_YYYYMMDD_HHMMSS.csv`
 7. **Log Results**: Records all operations and results in log files
 
 ### Data Extraction

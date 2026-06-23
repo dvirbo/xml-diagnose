@@ -1,6 +1,6 @@
 """Main pipeline for processing XML reports."""
 import logging
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Set
 from database.manager import DatabaseManager
 from processors.xml_processor import XMLReportProcessor
 from utils.config_loader import load_config
@@ -10,12 +10,45 @@ from utils.report_utils import report_number_to_int, report_id_to_rashut_display
 
 logging.basicConfig(level=logging.INFO)
 
+NO_RESPONSE_ERROR_DESCRIPTION = 'לא התקבלה תגובה מהרשות'
+
 
 class ProcessingResult:
     """Data class to hold processing results (Python 3.6 compatible)"""
     def __init__(self, summary_reports=None, reports=None):
         self.summary_reports = summary_reports
         self.reports = reports
+
+
+def _processed_ids_from_export_rows(export_rows: List[Dict]) -> Set[int]:
+    processed_ids = set()
+    for row in export_rows:
+        report_id_str = row.get('report_id')
+        if not report_id_str:
+            continue
+        rid = report_number_to_int(report_id_str)
+        if rid is not None:
+            processed_ids.add(rid)
+    return processed_ids
+
+
+def _build_no_response_placeholders(
+    missing_ids: Set[int],
+    report_metadata: Dict[int, Dict],
+) -> List[Dict]:
+    placeholder_rows = []
+    for rid in sorted(missing_ids):
+        meta = report_metadata.get(rid, {})
+        placeholder_rows.append({
+            'first_status': '',
+            'final_status': '',
+            'error_code': '',
+            'error_description': NO_RESPONSE_ERROR_DESCRIPTION,
+            'report_folder': meta.get('report_folder', ''),
+            'report_id': report_id_to_rashut_display(rid),
+            'alert_id': str(meta.get('alert_id', '') or ''),
+        })
+    return placeholder_rows
 
 
 class XMLDiagnosePipeline:
@@ -33,8 +66,10 @@ class XMLDiagnosePipeline:
         result = ProcessingResult()
         
         try:
-            # Step 0: Get report_ids from latest process if query filter is enabled
+            # Step 0: Get report_ids for XML filter and no-response CSV rows
             allowed_report_ids = None
+            no_response_ids = None
+            report_metadata = {}
             reports_sent_count = 0
             if self.use_query_filter:
                 if not self.db_manager.connect():
@@ -42,23 +77,27 @@ class XMLDiagnosePipeline:
                     logging.info("Continuing without query filter...")
                 else:
                     try:
-                        # Get report_ids from latest process
-                        report_ids = self.db_manager.get_reports_from_latest_process()
-                        if report_ids:
-                            allowed_report_ids = set(report_ids)
+                        scope = self.db_manager.get_reports_to_process()
+                        allowed_report_ids = scope['allowed_report_ids']
+                        no_response_ids = scope['no_response_ids']
+                        report_metadata = scope['report_metadata']
+                        if allowed_report_ids:
                             reports_sent_count = len(allowed_report_ids)
                             logging.info(
-                                "Using query filter: {} report_ids from latest process".format(
+                                "Using query filter: {} report_ids (latest + no-response)".format(
                                     len(allowed_report_ids)
                                 )
                             )
                         else:
-                            logging.warning("No reports found from latest process. Processing all files.")
+                            logging.warning(
+                                "No reports found from latest process or no-response query. "
+                                "Processing all files."
+                            )
                     except Exception as e:
-                        logging.error("Error getting reports from latest process: {}".format(e))
+                        logging.error("Error getting reports to process: {}".format(e))
                         logging.info("Continuing without query filter...")
             
-            # Step 1: Process XML files (filtering only by report_ids from latest process)
+            # Step 1: Process XML files (filtering by allowed_report_ids)
             # Date filter is no longer used for XML selection; we keep the CLI date parameter
             # only for compatibility and logging.
             self.xml_processor = XMLReportProcessor(self.input_directory, None, allowed_report_ids)
@@ -80,34 +119,17 @@ class XMLDiagnosePipeline:
             
             # Step 3: Export reports to CSV (requires SAR_FOLDER_NAME from DB update)
             export_rows = result.summary_reports if isinstance(result.summary_reports, list) else []
-            if export_rows:
-                # Ensure we have a CSV row for every report_id that was sent to Rashut
-                parsed_count = len(export_rows)
-                if allowed_report_ids:
-                    processed_ids = set()
-                    for row in export_rows:
-                        report_id_str = row.get('report_id')
-                        if not report_id_str:
-                            continue
-                        rid = report_number_to_int(report_id_str)
-                        if rid is not None:
-                            processed_ids.add(rid)
-                    missing_ids = allowed_report_ids - processed_ids
-                    if missing_ids:
-                        placeholder_rows = []
-                        for rid in sorted(missing_ids):
-                            placeholder_rows.append({
-                                'first_status': '',
-                                'final_status': '',
-                                'error_code': '',
-                                # No FinalResponse received for this report_id
-                                'error_description': 'לא התקבלה תגובה שנייה',
-                                'report_folder': '',
-                                'report_id': report_id_to_rashut_display(rid),
-                                'alert_id': ''
-                            })
-                        export_rows.extend(placeholder_rows)
+            parsed_count = len(export_rows)
 
+            if no_response_ids:
+                processed_ids = _processed_ids_from_export_rows(export_rows)
+                missing_ids = no_response_ids - processed_ids
+                if missing_ids:
+                    export_rows.extend(
+                        _build_no_response_placeholders(missing_ids, report_metadata)
+                    )
+
+            if export_rows:
                 config = load_config()
                 export_dir = config.get('export_directory', '/var/Reports_To_Send')
                 try:
@@ -134,4 +156,3 @@ class XMLDiagnosePipeline:
             self.db_manager.close()
         
         return result
-
