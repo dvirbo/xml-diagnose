@@ -66,7 +66,7 @@ def export_reports_to_csv(
             # Optional summary rows at the top of the CSV
             if reports_sent_to_rashut is not None and reports_parsed is not None:
                 writer.writerow(['דיווחים שנשלחו לרשות', str(reports_sent_to_rashut)])
-                writer.writerow(['דיווחים שהתקבלו', str(reports_parsed)])
+                writer.writerow(['דיווחים שהתקבלו מהרשות', str(reports_parsed)])
                 # Blank separator row before detailed table
                 writer.writerow([])
             

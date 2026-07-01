@@ -20,16 +20,46 @@ class ProcessingResult:
         self.reports = reports
 
 
-def _processed_ids_from_export_rows(export_rows: List[Dict]) -> Set[int]:
-    processed_ids = set()
+def _report_ids_from_export_rows(export_rows: List[Dict]) -> Set[int]:
+    ids = set()
     for row in export_rows:
-        report_id_str = row.get('report_id')
-        if not report_id_str:
-            continue
-        rid = report_number_to_int(report_id_str)
+        rid = report_number_to_int(row.get('report_id'))
         if rid is not None:
-            processed_ids.add(rid)
-    return processed_ids
+            ids.add(rid)
+    return ids
+
+
+def _yn_char_to_status(value) -> str:
+    if value is None:
+        return ''
+    normalized = str(value).strip().upper()
+    if normalized == 'Y':
+        return 'תקין'
+    if normalized == 'N':
+        return 'לא תקין'
+    return ''
+
+
+def _build_export_row_from_log(log_row: Dict) -> Dict:
+    """Build a CSV row from IMP_REPORT_LOG for reports answered in a prior run."""
+    first_orig = log_row.get('first_response_orig')
+    final_valid = log_row.get('final_response_valid')
+    first_status = _yn_char_to_status(first_orig)
+    final_status = _yn_char_to_status(final_valid)
+    overall_valid = (
+        str(first_orig or '').strip().upper() == 'Y'
+        and str(final_valid or '').strip().upper() == 'Y'
+    )
+    report_id = log_row['report_id']
+    return {
+        'first_status': first_status,
+        'final_status': final_status,
+        'error_code': '',
+        'error_description': '' if overall_valid else (log_row.get('status_desc') or ''),
+        'report_folder': log_row.get('sar_folder_name') or '',
+        'report_id': report_id_to_rashut_display(report_id),
+        'alert_id': str(log_row.get('alert_id') or ''),
+    }
 
 
 def _build_no_response_placeholders(
@@ -51,6 +81,13 @@ def _build_no_response_placeholders(
     return placeholder_rows
 
 
+def _sort_export_rows(export_rows: List[Dict]) -> List[Dict]:
+    return sorted(
+        export_rows,
+        key=lambda row: report_number_to_int(row.get('report_id')) or 0,
+    )
+
+
 class XMLDiagnosePipeline:
     """Main pipeline for processing XML reports"""
     
@@ -66,10 +103,10 @@ class XMLDiagnosePipeline:
         result = ProcessingResult()
         
         try:
-            # Step 0: Get report_ids for XML filter and no-response CSV rows
+            # Step 0: Get report_ids for XML filtering and CSV scope
             allowed_report_ids = None
-            no_response_ids = None
-            report_metadata = {}
+            latest_process_ids = set()
+            initial_pending_ids = set()
             reports_sent_count = 0
             if self.use_query_filter:
                 if not self.db_manager.connect():
@@ -79,10 +116,9 @@ class XMLDiagnosePipeline:
                     try:
                         scope = self.db_manager.get_reports_to_process()
                         allowed_report_ids = scope['allowed_report_ids']
-                        no_response_ids = scope['no_response_ids']
-                        report_metadata = scope['report_metadata']
+                        latest_process_ids = scope['latest_process_ids']
+                        initial_pending_ids = scope['no_response_ids']
                         if allowed_report_ids:
-                            reports_sent_count = len(allowed_report_ids)
                             logging.info(
                                 "Using query filter: {} report_ids (latest + no-response)".format(
                                     len(allowed_report_ids)
@@ -104,30 +140,65 @@ class XMLDiagnosePipeline:
             result.reports = self.xml_processor.process_xml_files()
             
             # Step 2: Update database with filtered results
-            # This step updates IMP_REPORT_LOG, IMP_REPORT_STATUS_TRACKING, and actone.alerts tables
-            # with the parsed and filtered report data from Step 1
-            # Returns export rows (with SAR_FOLDER_NAME) for CSV export
             if not self.db_manager.connection:
                 if not self.db_manager.connect():
                     logging.error("Skipping database update due to connection failure")
                     return result
             
-            # Convert to lists if they're dictionaries, or use as-is if already lists
             all_reports = result.reports if isinstance(result.reports, list) else [result.reports] if result.reports else []
             result.summary_reports = self.db_manager.update_reports(all_reports)
-            # Note: Alert updates are now handled within the database update process
             
-            # Step 3: Export reports to CSV (requires SAR_FOLDER_NAME from DB update)
-            export_rows = result.summary_reports if isinstance(result.summary_reports, list) else []
-            parsed_count = len(export_rows)
+            # Step 3: Build CSV for latest process + initial pending pool (both NULL at run start)
+            parsed_rows = list(result.summary_reports) if isinstance(result.summary_reports, list) else []
+            reports_received_count = 0
 
-            if no_response_ids:
-                processed_ids = _processed_ids_from_export_rows(export_rows)
-                missing_ids = no_response_ids - processed_ids
-                if missing_ids:
-                    export_rows.extend(
-                        _build_no_response_placeholders(missing_ids, report_metadata)
+            if self.use_query_filter and self.db_manager.connection:
+                csv_scope_ids = latest_process_ids | initial_pending_ids
+                if csv_scope_ids:
+                    still_no_response_ids, no_response_metadata = (
+                        self.db_manager.get_reports_no_response()
                     )
+
+                    export_rows = [
+                        row for row in parsed_rows
+                        if report_number_to_int(row.get('report_id')) in csv_scope_ids
+                    ]
+                    existing_ids = _report_ids_from_export_rows(export_rows)
+
+                    # Answered in scope but not parsed this run → load from IMP_REPORT_LOG
+                    answered_missing = (csv_scope_ids - still_no_response_ids) - existing_ids
+                    if answered_missing:
+                        log_rows = self.db_manager.get_report_log_by_ids(sorted(answered_missing))
+                        for log_row in log_rows:
+                            export_rows.append(_build_export_row_from_log(log_row))
+                            existing_ids.add(log_row['report_id'])
+
+                    # Still no response (both NULL after update) within CSV scope → placeholders
+                    placeholder_ids = (csv_scope_ids & still_no_response_ids) - existing_ids
+                    if placeholder_ids:
+                        export_rows.extend(
+                            _build_no_response_placeholders(placeholder_ids, no_response_metadata)
+                        )
+
+                    reports_sent_count = len(latest_process_ids)
+                    reports_received_count = len(initial_pending_ids - still_no_response_ids)
+                    logging.info(
+                        "CSV scope: {} rows ({} latest + {} pending at start), "
+                        "{} sent, {} pending received from Rashut".format(
+                            len(export_rows),
+                            len(latest_process_ids),
+                            len(initial_pending_ids),
+                            reports_sent_count,
+                            reports_received_count,
+                        )
+                    )
+                else:
+                    export_rows = []
+            else:
+                export_rows = parsed_rows
+                reports_received_count = len(export_rows)
+
+            export_rows = _sort_export_rows(export_rows)
 
             if export_rows:
                 config = load_config()
@@ -137,11 +208,10 @@ class XMLDiagnosePipeline:
                         export_rows,
                         export_dir,
                         reports_sent_to_rashut=reports_sent_count,
-                        reports_parsed=parsed_count,
+                        reports_parsed=reports_received_count,
                     )
                 except Exception as e:
                     logging.error("CSV export failed: {}".format(e))
-                    # Continue - do not fail the pipeline for export errors
             else:
                 logging.info("No reports to export, skipping CSV export")
             
@@ -152,7 +222,6 @@ class XMLDiagnosePipeline:
             raise
         
         finally:
-            # Close database connection
             self.db_manager.close()
         
         return result

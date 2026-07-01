@@ -6,6 +6,16 @@ from database.updater import update_db
 from database.queries import SQL_QUERIES
 
 
+def _to_int_report_id(value) -> Optional[int]:
+    """Normalize Oracle NUMBER/Decimal report_id to int."""
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 class DatabaseManager:
     """Handles database operations"""
     
@@ -39,12 +49,51 @@ class DatabaseManager:
             cursor.execute(SQL_QUERIES['GET_REPORTS_FROM_LATEST_PROCESS'])
             rows = cursor.fetchall()
             cursor.close()
-            result = [row[0] for row in rows]
+            result = [_to_int_report_id(row[0]) for row in rows]
+            result = [rid for rid in result if rid is not None]
             logging.info("Retrieved {} report_ids from latest process".format(len(result)))
             return result
         except Exception as e:
             logging.error("Error executing query to get reports from latest process: {}".format(e))
             return []
+
+    def _fetch_no_response_reports(self) -> Tuple[Set[int], Dict[int, Dict]]:
+        """Query reports with no first/final response recorded in IMP_REPORT_LOG."""
+        no_response_ids = set()
+        report_metadata = {}
+        if not self.connection:
+            return no_response_ids, report_metadata
+
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute(SQL_QUERIES['GET_REPORTS_NO_RESPONSE'])
+            rows = cursor.fetchall()
+            cursor.close()
+        except Exception as e:
+            logging.error("Error fetching no-response reports: {}".format(e))
+            return no_response_ids, report_metadata
+
+        for row in rows:
+            report_id = _to_int_report_id(row[0])
+            if report_id is None:
+                continue
+            no_response_ids.add(report_id)
+            report_metadata[report_id] = {
+                'alert_id': row[1] or '',
+                'report_folder': row[2] or '',
+            }
+        return no_response_ids, report_metadata
+
+    def get_reports_no_response(self) -> Tuple[Set[int], Dict[int, Dict]]:
+        """
+        Reports still awaiting any Rashut response (both response fields NULL).
+        Call after DB updates so CSV placeholders reflect current state.
+        """
+        no_response_ids, report_metadata = self._fetch_no_response_reports()
+        logging.info(
+            "Retrieved {} report_ids still awaiting Rashut response".format(len(no_response_ids))
+        )
+        return no_response_ids, report_metadata
 
     def get_reports_to_process(self) -> Dict:
         """
@@ -53,11 +102,13 @@ class DatabaseManager:
         Returns:
             Dict with:
             - allowed_report_ids: latest process ∪ no-response reports (for XML filter)
-            - no_response_ids: reports with no first/final response (for CSV placeholders)
-            - report_metadata: {report_id: {alert_id, report_folder}} for no-response reports
+            - latest_process_ids: report IDs from the latest import process
+            - no_response_ids: reports with no first/final response at query time (XML scope only)
+            - report_metadata: metadata for no-response reports at query time
         """
         empty = {
             'allowed_report_ids': set(),
+            'latest_process_ids': set(),
             'no_response_ids': set(),
             'report_metadata': {},
         }
@@ -68,26 +119,14 @@ class DatabaseManager:
         try:
             cursor = self.connection.cursor()
             cursor.execute(SQL_QUERIES['GET_REPORTS_FROM_LATEST_PROCESS'])
-            latest_ids = [row[0] for row in cursor.fetchall()]
-
-            cursor.execute(SQL_QUERIES['GET_REPORTS_NO_RESPONSE'])
-            no_response_rows = cursor.fetchall()
+            latest_ids = [_to_int_report_id(row[0]) for row in cursor.fetchall()]
             cursor.close()
         except Exception as e:
             logging.error("Error fetching reports to process: {}".format(e))
             return empty
 
-        no_response_ids = set()
-        report_metadata = {}
-        for row in no_response_rows:
-            report_id = row[0]
-            no_response_ids.add(report_id)
-            report_metadata[report_id] = {
-                'alert_id': row[1] or '',
-                'report_folder': row[2] or '',
-            }
-
-        latest_set = set(latest_ids)
+        latest_set = {rid for rid in latest_ids if rid is not None}
+        no_response_ids, report_metadata = self._fetch_no_response_reports()
         allowed_report_ids = latest_set | no_response_ids
         overlap = len(latest_set & no_response_ids)
 
@@ -98,9 +137,42 @@ class DatabaseManager:
         )
         return {
             'allowed_report_ids': allowed_report_ids,
+            'latest_process_ids': latest_set,
             'no_response_ids': no_response_ids,
             'report_metadata': report_metadata,
         }
+
+    def get_report_log_by_ids(self, report_ids: List[int]) -> List[Dict]:
+        """Fetch IMP_REPORT_LOG rows for CSV export of answered reports."""
+        if not self.connection or not report_ids:
+            return []
+
+        try:
+            cursor = self.connection.cursor()
+            placeholders = ','.join([':{}'.format(i + 1) for i in range(len(report_ids))])
+            query = SQL_QUERIES['GET_REPORT_LOG_BY_IDS'].format(placeholders=placeholders)
+            cursor.execute(query, report_ids)
+            rows = cursor.fetchall()
+            cursor.close()
+        except Exception as e:
+            logging.error("Error fetching report log by IDs: {}".format(e))
+            return []
+
+        result = []
+        for row in rows:
+            report_id = _to_int_report_id(row[0])
+            if report_id is None:
+                continue
+            result.append({
+                'report_id': report_id,
+                'alert_id': row[1] or '',
+                'sar_folder_name': row[2] or '',
+                'first_response_orig': row[3],
+                'final_response_valid': row[4],
+                'status_desc': row[5] or '',
+            })
+        logging.info("Fetched {} IMP_REPORT_LOG rows for CSV export".format(len(result)))
+        return result
     
     def get_report_numbers_by_ids(self, report_ids: List[int]) -> Set[int]:
         """
@@ -130,7 +202,8 @@ class DatabaseManager:
             cursor.close()
             
             # Return set of report_ids that exist
-            result = {row[0] for row in rows}
+            result = {_to_int_report_id(row[0]) for row in rows}
+            result = {rid for rid in result if rid is not None}
             logging.info("Found {} report_ids in database out of {} requested".format(len(result), len(report_ids)))
             return result
             

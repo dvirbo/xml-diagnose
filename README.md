@@ -180,7 +180,7 @@ password_key = actone
 3. **Parse XML**: Extracts data from FirstResponse and FinalResponse XML files
 4. **Link Reports**: Links FirstResponse and FinalResponse files by ReportNumber
 5. **Update Database**: Updates all three database tables in a single transaction (SAR_FOLDER_NAME is required for export)
-6. **Export to CSV**: Writes processed reports and no-response placeholders to a CSV file in the export directory. Reports still awaiting any Rashut response (both response fields NULL) that were not parsed this run appear as placeholder rows with error description `לא התקבלה תגובה מהרשות`, plus `alert_id` and folder name from the database. Hebrew headers: סטטוס תגובה, קוד שגיאה, תיאור שגיאה, שם תיקיית דיווח, מספר דיווח, מספר התראה. File naming: `reports_YYYYMMDD_HHMMSS.csv`
+6. **Export to CSV**: After the DB update, builds rows for `latest_process_ids ∪ initial_pending_ids` (pending = both response fields NULL at run start). Answered reports show full status (from XML or `IMP_REPORT_LOG`); still-unanswered show placeholder `לא התקבלה תגובה מהרשות`. Header `דיווחים שנשלחו לרשות` = latest process count; `דיווחים שהתקבלו מהרשות` = pending-pool reports that received a Rashut response after update.
 7. **Log Results**: Records all operations and results in log files
 
 ### Data Extraction
