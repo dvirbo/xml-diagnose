@@ -187,9 +187,10 @@ password_key = actone
 
 The system extracts the following information from XML files:
 
-- **FirstResponse**: Report validity, received date, legal status description
+- **FirstResponse**: Report validity, received date, legal status description, `ReportInstanceStatusReason`
 - **FinalResponse**: Report validity, mispar tkina (status ID), legal status description
-- **Status Classification**: Automatically determines status description based on both responses
+- **FirstResponse-only (invalid first, no FinalResponse)**: Processed as a Rashut response; CSV **תיאור שגיאה** uses `ReportInstanceStatusReason`; **סטטוס תגובה סופית** is empty (no second response is sent)
+- **Status Classification**: Automatically determines status description based on both responses when both exist
 
 ## Logging
 

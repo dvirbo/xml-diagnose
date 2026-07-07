@@ -40,6 +40,11 @@ def _yn_char_to_status(value) -> str:
     return ''
 
 
+def _is_blank_response_value(value) -> bool:
+    """True when a CHAR response field is NULL or whitespace-only."""
+    return value is None or not str(value).strip()
+
+
 def _build_export_row_from_log(log_row: Dict) -> Dict:
     """Build a CSV row from IMP_REPORT_LOG for reports answered in a prior run."""
     first_orig = log_row.get('first_response_orig')
@@ -50,12 +55,18 @@ def _build_export_row_from_log(log_row: Dict) -> Dict:
         str(first_orig or '').strip().upper() == 'Y'
         and str(final_valid or '').strip().upper() == 'Y'
     )
+    if _is_blank_response_value(first_orig) and _is_blank_response_value(final_valid):
+        error_description = NO_RESPONSE_ERROR_DESCRIPTION
+    elif overall_valid:
+        error_description = ''
+    else:
+        error_description = log_row.get('status_desc') or ''
     report_id = log_row['report_id']
     return {
         'first_status': first_status,
         'final_status': final_status,
         'error_code': '',
-        'error_description': '' if overall_valid else (log_row.get('status_desc') or ''),
+        'error_description': error_description,
         'report_folder': log_row.get('sar_folder_name') or '',
         'report_id': report_id_to_rashut_display(report_id),
         'alert_id': str(log_row.get('alert_id') or ''),
@@ -79,6 +90,19 @@ def _build_no_response_placeholders(
             'alert_id': str(meta.get('alert_id', '') or ''),
         })
     return placeholder_rows
+
+
+def _apply_no_response_error_descriptions(
+    export_rows: List[Dict],
+    still_no_response_ids: Set[int],
+) -> None:
+    """Ensure no-response reports always show the Rashut no-response message in CSV."""
+    if not still_no_response_ids:
+        return
+    for row in export_rows:
+        rid = report_number_to_int(row.get('report_id'))
+        if rid in still_no_response_ids and not (row.get('error_description') or '').strip():
+            row['error_description'] = NO_RESPONSE_ERROR_DESCRIPTION
 
 
 def _sort_export_rows(export_rows: List[Dict]) -> List[Dict]:
@@ -182,6 +206,7 @@ class XMLDiagnosePipeline:
 
                     reports_sent_count = len(latest_process_ids)
                     reports_received_count = len(initial_pending_ids - still_no_response_ids)
+                    _apply_no_response_error_descriptions(export_rows, still_no_response_ids)
                     logging.info(
                         "CSV scope: {} rows ({} latest + {} pending at start), "
                         "{} sent, {} pending received from Rashut".format(

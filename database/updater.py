@@ -176,10 +176,14 @@ class DatabaseUpdater:
         # first_response_valid: Convert boolean to CHAR(1) - 'Y'/'N' or '1'/'0'
         first_response_valid = status.get('first_response_valid', False)
         first_response_orig = 'Y' if first_response_valid else 'N'
-        
-        # final_response_valid: Convert boolean to CHAR(1) - 'Y'/'N' or '1'/'0'
-        final_response_valid = status.get('final_response_valid', False)
-        final_response_valid_char = 'Y' if final_response_valid else 'N'
+
+        # No final response file exists for first-only reports — leave FINAL_RESPONSE_VALID NULL
+        has_final_response = status.get('has_final_response', False)
+        if has_final_response:
+            final_response_valid = status.get('final_response_valid', False)
+            final_response_valid_char = 'Y' if final_response_valid else 'N'
+        else:
+            final_response_valid_char = None
         
         # Use ReportInstanceDate from FirstResponse for received_date
         # Convert string date to datetime object for Oracle DATE field
@@ -295,25 +299,31 @@ class DatabaseUpdater:
         error_description, report_folder, report_id, alert_id
         """
         status = processed_report.status
+        first_response = processed_report.first_response or {}
         final_response = processed_report.final_response or {}
-        report_data = processed_report.report_data or {}
 
         # Simple first/final statuses based on valid flags
         first_valid = status.get('first_response_valid', False)
         final_valid = status.get('final_response_valid', False)
-        first_status = "תקין" if first_valid else "לא תקין"
-        final_status = "תקין" if final_valid else "לא תקין"
         has_first_response = status.get('has_first_response', False)
-        
-        # For valid reports: empty; for invalid: from FinalResponse
-        if status.get('overall_valid', False):
+        has_final_response = status.get('has_final_response', False)
+        first_status = "תקין" if first_valid else "לא תקין"
+
+        if has_first_response and not has_final_response:
+            # FirstResponse-only: no final file from Rashut (e.g. invalid first)
+            final_status = ''
+            error_code = ''
+            error_description = first_response.get('ReportInstanceStatusReason', '')
+            if not error_description:
+                error_description = first_response.get('ReportInstanceLegalStatusDesc', '')
+        elif status.get('overall_valid', False):
+            final_status = "תקין" if final_valid else "לא תקין"
             error_code = ''
             error_description = ''
         else:
+            final_status = "תקין" if final_valid else "לא תקין"
             error_code = final_response.get('ErrorCode', '')
-            # Use ErrorDescription element from XML as the source for CSV error_description
             error_description = final_response.get('ErrorDescription', '')
-            # If we have only a FinalResponse (no FirstResponse), override with a clear message
             if not has_first_response:
                 error_description = "לא התקבלה תגובה ראשונה"
         

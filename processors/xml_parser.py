@@ -377,5 +377,30 @@ def link_responses(first_responses: Dict[str, Dict],
 
         reports[report_number] = combined_data
 
+    # FirstResponse-only (no FinalResponse — e.g. invalid first, Rashut sends no second response)
+    for report_number, first_data in first_responses.items():
+        if report_number in reports:
+            continue
+
+        first_valid = first_data.get("valid", False)
+        status_category = "FIRST_ONLY" if first_valid else "FIRST_ONLY_INVALID"
+
+        reports[report_number] = {
+            "ReportNumber": report_number,
+            "ReportNumberOriginal": first_data.get("ReportNumberOriginal") or report_number,
+            "FirstResponse": first_data,
+            "FinalResponse": None,
+            "Status": {
+                "first_response_valid": first_valid,
+                "final_response_valid": False,
+                "overall_valid": False,
+                "status_category": status_category,
+                "first_status_desc": first_data.get("ReportInstanceLegalStatusDesc", ""),
+                "final_status_desc": "",
+                "has_first_response": True,
+                "has_final_response": False,
+            },
+        }
+
     return reports
 
